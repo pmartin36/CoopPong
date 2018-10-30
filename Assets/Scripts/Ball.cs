@@ -82,16 +82,20 @@ public class Ball : MonoBehaviour
 
 	private void GenerateRandomPositionAndDirection() {
 		MoveSpeed = BaseSpeed;
-		transform.position = new Vector2(0, Random.Range(-8f, 8f));
-		movementDirection = new Vector2(Random.Range(0.5f, 1f), Random.Range(0f, 0.4f)).normalized;
-		Rotation = Random.Range(-90f, 90f);
 		curve = 0;
+
+		transform.position = Vector3.zero;
+		movementDirection = Vector3.right;
+		Rotation = 0;
+
+		//transform.position = new Vector2(0, Random.Range(-8f, 8f));
+		//movementDirection = new Vector2(Random.Range(0.5f, 1f), Random.Range(0f, 0.4f)).normalized;
+		//Rotation = Random.Range(-90f, 90f);
 	}
 
 	public void OnCollisionEnter2D(Collision2D collision) {
-		Vector3 normal = hitBetweenLastMove.collider == collision.collider 
-			? hitBetweenLastMove.normal 
-			: collision.GetContact(0).normal;
+		ContactPoint2D cp = collision.GetContact(0);
+		Vector3 normal = hitBetweenLastMove.collider == collision.collider ? hitBetweenLastMove.normal : cp.normal;
 
 		Vector3 curveToAdd = isCurving ? curve * curveDirection : Vector3.zero;
 		Vector3 actualMoveDirection = (movementDirection * MoveSpeed + curveToAdd).normalized;
@@ -101,20 +105,13 @@ public class Ball : MonoBehaviour
 		var inc = actualMoveDirection; // For debug	
 
 		if (dot < 0) {
-			if (Mathf.Min(normal.x, normal.y) > 0.01f && dot < -0.90f) {
-				movementDirection = -actualMoveDirection;
-			}
-			else {
-				movementDirection = actualMoveDirection - 2 * dot * normal;
-			}
-
-			if (Mathf.Abs(movementDirection.x) < 0.25f) {
-				Debug.Log("Override");
-				movementDirection = (movementDirection + Mathf.Sign(transform.position.x) * Vector3.left).normalized;
-			}
-
-			if (collision.collider.tag == "Player") {
+			Debug.Log(normal.x);
+			if (collision.collider.tag == "Player" && Mathf.Abs(normal.x) > 0.1f ) {
 				var player = collision.collider.GetComponent<Player>();
+				movementDirection = player.GetBallTrajectory(
+					hitBetweenLastMove.collider == collision.collider ? hitBetweenLastMove.point : cp.point,
+					actualMoveDirection);
+
 				Rotation += player.YMove * 6 * MoveSpeed * -Mathf.Sign(movementDirection.x);
 
 				curveDirection = movementDirection.Rotate(90);
@@ -122,6 +119,13 @@ public class Ball : MonoBehaviour
 					curveDirection.x = 0;
 				}
 				// Debug.Log($"Collided with {collision.collider.name} @{Time.time}, Rotation: {Rotation}, Rotation: {isCurving}");
+			} else {
+				movementDirection = actualMoveDirection - 2 * dot * normal;
+
+				if (Mathf.Abs(movementDirection.x) < 0.25f) {
+					Debug.Log("Override");
+					movementDirection = (movementDirection + Mathf.Sign(transform.position.x) * Vector3.left).normalized;
+				}
 			}
 
 			curve = 0;
