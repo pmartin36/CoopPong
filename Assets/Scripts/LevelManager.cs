@@ -7,13 +7,37 @@ public class LevelManager : ContextManager
 	public Player LeftPlayer;
 	public Player RightPlayer;
 
+	public bool IsSlowMode { get; private set; }
+
 	public override void HandleInput(InputPackage p) {
 		if(LeftPlayer != null) {
-			LeftPlayer.HandleInput(p.LeftPlayerVertical, p.LeftPlayerHorizontal, p.LeftPlayerHorizontalDown);
+			LeftPlayer.HandleInput(p.LeftPlayerVertical, p.LeftPlayerFlip, p.LeftPlayerSlow);
 		}
 
 		if(RightPlayer != null) {
-			RightPlayer.HandleInput(p.RightPlayerVertical, p.RightPlayerHorizontal, p.RightPlayerHorizontalDown);
+			RightPlayer.HandleInput(p.RightPlayerVertical, p.RightPlayerFlip, p.RightPlayerSlow);
 		}
+	}
+
+	public bool SetSlowMode(bool slowMode) {
+		if(IsSlowMode == slowMode) return false;
+
+		IsSlowMode = slowMode;
+		if(IsSlowMode) {
+			GameManager.Instance.TimeScale = 0.5f;
+			LeftPlayer.MoveSpeed *= 2f;
+			RightPlayer.MoveSpeed *= 2f;
+		}
+		else {
+			GameManager.Instance.TimeScale = 1f;
+			LeftPlayer.ResetMoveSpeed();
+			RightPlayer.ResetMoveSpeed();
+		}
+
+		return true;
+	}
+
+	public void LateUpdate() {
+		SetSlowMode(LeftPlayer.SlowModeActive || RightPlayer.SlowModeActive);
 	}
 }
