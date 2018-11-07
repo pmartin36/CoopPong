@@ -25,6 +25,8 @@ public class Player : MonoBehaviour
 	private bool pipsOut;
 	private float timeSinceLastEnergyUse;
 
+	public AimAssist AimAssist;
+
 	public float YMove {
 		get { return MovementInput * MoveSpeed; }
 	}
@@ -40,6 +42,8 @@ public class Player : MonoBehaviour
 		var circleCollider = GetComponentInChildren<CircleCollider2D>();
 		Width = (bodyCollider.size.y * bodyCollider.transform.lossyScale.y + circleCollider.radius * Mathf.Abs(circleCollider.transform.lossyScale.y) * 2);
 		yMaximum = Camera.main.orthographicSize - (Width / 2f);
+
+		AimAssist = AimAssist.Light;
 	}
 
     // Update is called once per frame

@@ -30,3 +30,9 @@ public abstract class Utils {
 		return a - b * Mathf.Floor(Mathf.Abs(a / b));
 	}
 }
+
+public enum AimAssist {
+	None,
+	Light,
+	Heavy
+}
