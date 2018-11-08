@@ -157,7 +157,9 @@ public class Ball : MonoBehaviour
 		List<FlightData> flightData = new List<FlightData>();
 		float radius =  castRadius * (AimAssist == AimAssist.None ? 1 :
 							AimAssist == AimAssist.Light ? 1.5f : 2);
-			
+
+		flightData.Add(new FlightData(md.Position, null));
+
 		int i = 0;
 		while (i < 25 || Mathf.Abs(md.Position.x) < 15.8f) { // TODO: Hardcoded x position?
 			var tempPosition = md.Position;
@@ -171,7 +173,7 @@ public class Ball : MonoBehaviour
 				float dot = Vector2.Dot(actualMoveDirection, normal);				
 				if (dot < 0) {
 					// I would like to not have to do this overlap circle but can't seem to get it to work with just math
-					var oc = Physics2D.OverlapCircle(md.Position, castRadius, collidableAndTargetLayermask);
+					var oc = Physics2D.OverlapCircle(md.Position, castRadius, collidableLayermask);
 					if(oc != null) {
 						md.HandleNonPlayerCollision(dot, normal);
 						md.CalculateCurve();
@@ -186,11 +188,15 @@ public class Ball : MonoBehaviour
 			i++;
 		}
 
+		if(md.Position != flightData.Last().position) {
+			flightData.Add(new FlightData(md.Position, null));
+		}
+
 		return flightData;
 	}
 
-	private void PerformAimAssist(List<FlightData> fd) {	
-		if(AimAssist != AimAssist.None) {
+	private void PerformAimAssist(List<FlightData> fd) {
+		if (AimAssist != AimAssist.None) {
 
 		}
 	}
@@ -222,6 +228,12 @@ public class Ball : MonoBehaviour
 				_movementData.CalculateCurve();
 				List<FlightData> fd = GetFlightPath(player.gameObject);
 				PerformAimAssist(fd);
+
+				var lm = GameManager.Instance.LevelManager;
+				var otherPlayer = player.Side == PlayerSide.Left ? lm.RightPlayer : lm.LeftPlayer;
+				if(!otherPlayer.PlayerControlled) {
+					otherPlayer.GoToLocation(fd.Last().position);
+				}
 			} else {
 				_movementData.HandleNonPlayerCollision(dot, normal);
 				_movementData.CalculateCurve();

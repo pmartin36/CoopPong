@@ -18,14 +18,17 @@ public class Player : MonoBehaviour
 	public float MoveSpeed { get; set; }
 
 	private static float yMaximum;
-	private PlayerSide Side;
+	public PlayerSide Side { get; set; }
 
 	private BoxCollider2D bodyCollider;
 
 	private bool pipsOut;
 	private float timeSinceLastEnergyUse;
 
-	public AimAssist AimAssist;
+	public AimAssist AimAssist { get; set; }
+
+	public bool PlayerControlled;
+	private Coroutine PlayerMoveCoroutine;
 
 	public float YMove {
 		get { return MovementInput * MoveSpeed; }
@@ -60,19 +63,21 @@ public class Player : MonoBehaviour
 	}
 
 	public void HandleInput(float vertical, bool flip, bool slow) {
-		MovementInput = vertical;
-		if(flip) {
-			transform.localRotation = Quaternion.Euler(0, 0, transform.localRotation.eulerAngles.z + 180);
-			pipsOut = !pipsOut;
-		}
+		if(PlayerControlled) {
+			MovementInput = vertical;
+			if(flip) {
+				transform.localRotation = Quaternion.Euler(0, 0, transform.localRotation.eulerAngles.z + 180);
+				pipsOut = !pipsOut;
+			}
 	
-		if (slow && (Energy > 0.99f || SlowModeActive)) {
-			SlowModeActive = true;
-			Energy -= 0.75f * Time.deltaTime;
-			timeSinceLastEnergyUse = Time.time;
-		}
-		else {
-			SlowModeActive = false;
+			if (slow && (Energy > 0.99f || SlowModeActive)) {
+				SlowModeActive = true;
+				Energy -= 0.75f * Time.deltaTime;
+				timeSinceLastEnergyUse = Time.time;
+			}
+			else {
+				SlowModeActive = false;
+			}
 		}
 	}
 
@@ -103,16 +108,28 @@ public class Player : MonoBehaviour
 		return pipsOut ? -0.1f : 0.25f;
 	}
 
-	//IEnumerator FlipSide() {
-	//	float currentTime = 0f;
-	//	isFlipping = true;
-	//	float start = transform.localRotation.eulerAngles.z > 1f ? 180 : 0;
-	//	float end = 180 - start;
-	//	while(currentTime < 0.5f + Time.deltaTime) {
-	//		transform.localRotation = Quaternion.Euler(0, 0, Mathf.Lerp(start, end, currentTime*2f));
-	//		currentTime += Time.deltaTime;
-	//		yield return new WaitForEndOfFrame();
-	//	}
-	//	isFlipping = false;
-	//}
+	public void GoToLocation(Vector3 p) {
+		if(PlayerMoveCoroutine != null) {
+			StopCoroutine(PlayerMoveCoroutine);
+		}
+		p = new Vector3(transform.position.x, Mathf.Clamp(p.y + Random.Range(-1.2f,1.2f), -yMaximum, yMaximum));
+		PlayerMoveCoroutine = StartCoroutine(MoveToLocation(p));
+	}
+
+	private IEnumerator MoveToLocation(Vector3 p) {
+		float toGo = Mathf.Abs(p.y - transform.position.y);
+		Vector3 direction = Vector3.up * Mathf.Sign(p.y - transform.position.y);
+		while ( toGo > 0.1f ) {
+			float toMove = MoveSpeed * Time.deltaTime;
+			if( toGo > toMove ) {
+				transform.position += direction * toMove;
+			}
+			else {
+				transform.position += direction * toGo;
+				yield break;
+			}
+			toGo = Mathf.Abs(p.y - transform.position.y);
+			yield return new WaitForEndOfFrame();
+		}
+	}
 }
