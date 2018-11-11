@@ -1416,6 +1416,11 @@ PrefabInstance:
       propertyPath: m_TagString
       value: Player
       objectReference: {fileID: 0}
+    - target: {fileID: 8932928751224158282, guid: b2544b7e744a8794bbf0fc8e946b67c9,
+        type: 3}
+      propertyPath: PlayerControlled
+      value: 1
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: b2544b7e744a8794bbf0fc8e946b67c9, type: 3}
 --- !u!1 &1315041778
@@ -1688,7 +1693,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1464990469}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -2.83, y: 4.09, z: 0}
+  m_LocalPosition: {x: 8.1, y: -5.28, z: 0}
   m_LocalScale: {x: 2, y: 2, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
@@ -2027,11 +2032,6 @@ PrefabInstance:
     - target: {fileID: 918860361, guid: b2544b7e744a8794bbf0fc8e946b67c9, type: 3}
       propertyPath: m_Points.m_Paths.Array.data[0].Array.data[4].x
       value: 0.5
-      objectReference: {fileID: 0}
-    - target: {fileID: 3581469571391104539, guid: b2544b7e744a8794bbf0fc8e946b67c9,
-        type: 3}
-      propertyPath: m_TagString
-      value: Player
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: b2544b7e744a8794bbf0fc8e946b67c9, type: 3}

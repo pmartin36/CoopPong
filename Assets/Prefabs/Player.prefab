@@ -10,7 +10,6 @@ GameObject:
   m_Component:
   - component: {fileID: 5865376550886736631}
   - component: {fileID: 3560013551721598195}
-  - component: {fileID: 5219971038530352835}
   m_Layer: 9
   m_Name: Edge (1)
   m_TagString: Player
@@ -80,22 +79,6 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
---- !u!58 &5219971038530352835
-CircleCollider2D:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3468771567394369880}
-  m_Enabled: 1
-  m_Density: 1
-  m_Material: {fileID: 0}
-  m_IsTrigger: 0
-  m_UsedByEffector: 0
-  m_UsedByComposite: 0
-  m_Offset: {x: 0.11, y: -0.22}
-  serializedVersion: 2
-  m_Radius: 0.35
 --- !u!1 &3581469571391104539
 GameObject:
   m_ObjectHideFlags: 0
@@ -106,10 +89,9 @@ GameObject:
   m_Component:
   - component: {fileID: 1902802137130665690}
   - component: {fileID: 8892046117406279261}
-  - component: {fileID: 3509919068384251345}
   m_Layer: 9
   m_Name: Body
-  m_TagString: Untagged
+  m_TagString: Player
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -176,32 +158,6 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
---- !u!61 &3509919068384251345
-BoxCollider2D:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3581469571391104539}
-  m_Enabled: 1
-  m_Density: 1
-  m_Material: {fileID: 0}
-  m_IsTrigger: 0
-  m_UsedByEffector: 0
-  m_UsedByComposite: 0
-  m_Offset: {x: 0.11146705, y: 0}
-  m_SpriteTilingProperty:
-    border: {x: 0, y: 0, z: 0, w: 0}
-    pivot: {x: 0.5, y: 0.5}
-    oldSize: {x: 1, y: 2}
-    newSize: {x: 1, y: 2}
-    adaptiveTilingThreshold: 0.5
-    drawMode: 0
-    adaptiveTiling: 0
-  m_AutoTiling: 0
-  serializedVersion: 2
-  m_Size: {x: 0.7770659, y: 2}
-  m_EdgeRadius: 0
 --- !u!1 &7095484892591708759
 GameObject:
   m_ObjectHideFlags: 0
@@ -212,7 +168,6 @@ GameObject:
   m_Component:
   - component: {fileID: 9121618641344453184}
   - component: {fileID: 5655968620817032196}
-  - component: {fileID: 3867365166914486286}
   m_Layer: 9
   m_Name: Edge
   m_TagString: Player
@@ -282,22 +237,6 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
---- !u!58 &3867365166914486286
-CircleCollider2D:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7095484892591708759}
-  m_Enabled: 1
-  m_Density: 1
-  m_Material: {fileID: 0}
-  m_IsTrigger: 0
-  m_UsedByEffector: 0
-  m_UsedByComposite: 0
-  m_Offset: {x: 0.11, y: -0.22}
-  serializedVersion: 2
-  m_Radius: 0.35
 --- !u!1 &8932928751224158281
 GameObject:
   m_ObjectHideFlags: 0
@@ -308,6 +247,7 @@ GameObject:
   m_Component:
   - component: {fileID: 8932928751224158284}
   - component: {fileID: 8932928751224158282}
+  - component: {fileID: 5036684713422636143}
   m_Layer: 9
   m_Name: Player
   m_TagString: Player
@@ -345,3 +285,20 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   BaseSpeed: 7
+  PlayerControlled: 0
+--- !u!70 &5036684713422636143
+CapsuleCollider2D:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8932928751224158281}
+  m_Enabled: 1
+  m_Density: 1
+  m_Material: {fileID: 0}
+  m_IsTrigger: 0
+  m_UsedByEffector: 0
+  m_UsedByComposite: 0
+  m_Offset: {x: 0.11157036, y: -0.00532074}
+  m_Size: {x: 0.7636299, y: 2.3245773}
+  m_Direction: 0

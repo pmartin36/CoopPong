@@ -3,89 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
-public struct FlightData {
-	public Vector3 position;
-	public RaycastHit2D[] hit;
-
-	public FlightData(Vector3 p, RaycastHit2D[] h) {
-		position = p;
-		hit = h;
-	}
-}
-
-public class MovementData {
-	public Vector3 Position { get; set; }
-	public Vector3 MovementDirection { get; set; }
-	public float MoveSpeed { get; set; }
-
-	public float Rotation { get; set; }
-	public float Curve { get; set; }
-	public Vector3 CurveDirection { get; set; }
-
-	public bool IsCurving { get; set; }
-
-	public Vector3 ActualMovementDirection {
-		get {
-			Vector3 curveToAdd = IsCurving ? Curve * CurveDirection : Vector3.zero;
-			return (MovementDirection * MoveSpeed + curveToAdd).normalized;
-		}
-	}
-	public float ActualMoveSpeed { get; private set; }
-
-	public MovementData() {
-
-	}
-
-	public MovementData(MovementData d) : this (  
-		new Vector3(d.Position.x, d.Position.y),
-		new Vector3(d.MovementDirection.x, d.MovementDirection.y),
-		d.MoveSpeed,
-		d.Rotation,
-		d.Curve,
-		new Vector3(d.CurveDirection.x, d.CurveDirection.y),
-		d.IsCurving) { }
-
-	public MovementData(Vector3 position, Vector3 movementDirection, float moveSpeed, float rotation, float curve, Vector3 curveDirection, bool isCurving) {
-		Position = position;
-		MovementDirection = movementDirection;
-		MoveSpeed = moveSpeed;
-		Rotation = rotation;
-		Curve = curve;
-		CurveDirection = curveDirection;
-		IsCurving = isCurving;
-	}
-
-	public void Update(float timestep) {
-		Rotation -= (Rotation * 0.4f * timestep);
-		Curve += Rotation / 200f * timestep;
-		Vector3 curveToAdd = IsCurving ? Curve * CurveDirection : Vector3.zero;
-
-		Vector3 delta = (MovementDirection * MoveSpeed + curveToAdd) * timestep;
-
-		Position += delta;
-		ActualMoveSpeed = delta.magnitude;
-	}
-
-	public void CalculateCurve() {
-		Vector3 cd = MovementDirection.Rotate(90);
-		if (Mathf.Sign(cd.x * Rotation) * Mathf.Sign(MovementDirection.x) < 0) {
-			cd.x = 0;
-		}
-		CurveDirection = cd;
-		IsCurving = Mathf.Abs(Vector2.Dot(cd, MovementDirection)) < 0.5f;
-		Curve = 0;
-	}
-
-	public void HandleNonPlayerCollision(float dot, Vector3 normal) {
-		MovementDirection = ActualMovementDirection - 2 * dot * normal;
-		if (Mathf.Abs(MovementDirection.x) < 0.25f) {
-			MovementDirection = (MovementDirection + Mathf.Sign(Position.x) * Vector3.left).normalized;
-		}
-
-		MoveSpeed += 0.25f;
-	}
-}
-
 public class Ball : MonoBehaviour
 {
 	private float BaseSpeed = 10;
@@ -97,8 +14,13 @@ public class Ball : MonoBehaviour
 		}
 	}
 
+	private List<MovementData> flightCollisions;
+	private int collisionsSinceLastPlayerCollision = 0;
+
 	private LayerMask collidableLayermask;
+	private LayerMask targetLayermask;
 	private LayerMask collidableAndTargetLayermask;
+
 	private CircleCollider2D ccollider;
 	private float castRadius;
 
@@ -106,7 +28,7 @@ public class Ball : MonoBehaviour
 	private RaycastHit2D hitBetweenLastMove;
 
 	private AimAssist AimAssist;
-	private bool AlreadyAimAssisted = true;
+	private bool aimAssistNeeded = true;
 
 	// Start is called before the first frame update
 	void Start()
@@ -117,7 +39,10 @@ public class Ball : MonoBehaviour
 		GenerateRandomPositionAndDirection();
 
 		collidableLayermask = 1 << LayerMask.NameToLayer("Collidable");
-		collidableAndTargetLayermask = collidableLayermask | ( 1 << LayerMask.NameToLayer("Target") );
+		targetLayermask = 1 << LayerMask.NameToLayer("Target");
+		collidableAndTargetLayermask = collidableLayermask |  targetLayermask;
+
+		aimAssistNeeded = false;
 	}
 
     // Update is called once per frame
@@ -133,9 +58,11 @@ public class Ball : MonoBehaviour
 	}
 
 	private void GenerateRandomPositionAndDirection() {
+		AimAssist = AimAssist.None;
 		_movementData = new MovementData(
-			position: Vector3.zero,
-			movementDirection: Vector3.right,
+			position: new Vector3(0f, 0.75f, 0),
+			//position: new Vector3(0f, 0.75f, 0),
+			movementDirection: new Vector3(16f, 9f, 0).normalized,
 			moveSpeed: BaseSpeed,
 			rotation: 0,
 			curve: 0,
@@ -143,62 +70,89 @@ public class Ball : MonoBehaviour
 			isCurving: false);
 		transform.position = _movementData.Position;
 
-		AlreadyAimAssisted = true;
-
 		//transform.position = new Vector2(0, Random.Range(-8f, 8f));
 		//movementDirection = new Vector2(Random.Range(0.5f, 1f), Random.Range(0f, 0.4f)).normalized;
 		//Rotation = Random.Range(-90f, 90f);
+
+		GetFlightPath(null);
 	}
 
-	private List<FlightData> GetFlightPath(GameObject origin) {			
-		bool aimAssistNeeded = true;
+	private List<MovementData> GetFlightPath(GameObject origin) {			
 		MovementData md = new MovementData(_movementData);
 
-		List<FlightData> flightData = new List<FlightData>();
+		List<MovementData> flightData = new List<MovementData>();
 		float radius =  castRadius * (AimAssist == AimAssist.None ? 1 :
-							AimAssist == AimAssist.Light ? 1.5f : 2);
+							AimAssist == AimAssist.Light ? 4f : 6f);
 
-		flightData.Add(new FlightData(md.Position, null));
+		RaycastHit2D closestLineHit = new RaycastHit2D();
+		bool waitingOnLastTargetHit = false;
+
+		flightData.Add(new MovementData(md));
 
 		int i = 0;
-		while (i < 25 || Mathf.Abs(md.Position.x) < 15.8f) { // TODO: Hardcoded x position?
+		int last_i = 0;
+		while (i < 25 || Mathf.Abs(md.Position.x) < 20f) { // TODO: Hardcoded x position?
 			var tempPosition = md.Position;
 			md.Update(Time.fixedDeltaTime);
 
 			var hits = Physics2D.CircleCastAll(tempPosition, radius, md.ActualMovementDirection, md.ActualMoveSpeed, collidableAndTargetLayermask);
-			var filteredHits = hits.Where( hit => hit.collider != null && hit.collider.gameObject != origin && hit.collider.transform.parent?.gameObject != origin ).ToArray();
+			var filteredHits = hits.Where( hit => hit.collider != null && hit.collider.gameObject != origin ).ToArray();
 			foreach (RaycastHit2D hit in filteredHits) {
-				Vector2 actualMoveDirection = md.ActualMovementDirection;
-				Vector2 normal = hit.normal;
-				float dot = Vector2.Dot(actualMoveDirection, normal);				
-				if (dot < 0) {
-					// I would like to not have to do this overlap circle but can't seem to get it to work with just math
-					var oc = Physics2D.OverlapCircle(md.Position, castRadius, collidableLayermask);
-					if(oc != null) {
-						md.HandleNonPlayerCollision(dot, normal);
-						md.CalculateCurve();
+				if(hit.collider.gameObject.layer == LayerMask.NameToLayer("Collidable")) {
+					Vector2 actualMoveDirection = md.ActualMovementDirection;
+					Vector2 normal = hit.normal;
+					float dot = Vector2.Dot(actualMoveDirection, normal);				
+					if (dot < 0) {
+						// I would like to not have to do this overlap circle but can't seem to get it to work with just math
+						var oc = Physics2D.OverlapCircle(md.Position, castRadius, collidableLayermask);
+						if(oc != null) {
+							md.HandleNonPlayerCollision(dot, normal);
+							md.CalculateCurve();
+							flightData.Add(new MovementData(md));
+							last_i = i;
+						}
 					}
 				}
-			}		
-			Debug.DrawLine(tempPosition, md.Position, Color.green, 5f);
+				else if(aimAssistNeeded && hit.collider.gameObject.layer == LayerMask.NameToLayer("Target")) {
+					// determine how much we'd need to move over in order to hit target
+					var linehit = Physics2D.Linecast(md.Position, hit.transform.position, targetLayermask);
 
-			if(filteredHits.Length > 0) {
-				flightData.Add(new FlightData(md.Position, hits));
+					if ( closestLineHit.collider == null || linehit.distance < closestLineHit.distance ) {
+						closestLineHit = linehit;
+						waitingOnLastTargetHit = true;
+					}
+				}
 			}
-			i++;
+
+			Debug.DrawLine(tempPosition, md.Position, aimAssistNeeded ? Color.green : Color.cyan, 3f);
+
+			if (filteredHits.Length < 1 && waitingOnLastTargetHit) {
+				waitingOnLastTargetHit = false;
+
+				if(closestLineHit.distance > castRadius) {
+					MovementData lastMd = flightData.Last();
+					Vector2 lastPosition = lastMd.Position;
+					float angle = Vector2.SignedAngle(md.Position - lastPosition, closestLineHit.point - lastPosition);
+					if(Mathf.Abs(angle) < 15f) {
+						lastMd.MovementDirection = lastMd.MovementDirection.Rotate(angle * 1.25f);
+						lastMd.CalculateCurve();
+						md = new MovementData(lastMd);			
+
+						i = last_i;
+						last_i = 0;
+						aimAssistNeeded = false;
+					}
+				}
+			} else {
+				i++;
+			}	
 		}
 
-		if(md.Position != flightData.Last().position) {
-			flightData.Add(new FlightData(md.Position, null));
+		if(md.Position != flightData.Last().Position) {
+			flightData.Add(new MovementData(md));
 		}
 
 		return flightData;
-	}
-
-	private void PerformAimAssist(List<FlightData> fd) {
-		if (AimAssist != AimAssist.None) {
-
-		}
 	}
 
 	public void OnCollisionEnter2D(Collision2D collision) {
@@ -221,21 +175,31 @@ public class Ball : MonoBehaviour
 
 				_movementData.MoveSpeed += player.GetMSDelta(point, actualMoveDirection);
 				AimAssist = player.AimAssist;
-				if (AimAssist != AimAssist.None) {
-					AlreadyAimAssisted = false;
-				}
+				aimAssistNeeded = AimAssist != AimAssist.None;
 
 				_movementData.CalculateCurve();
-				List<FlightData> fd = GetFlightPath(player.gameObject);
-				PerformAimAssist(fd);
+				flightCollisions = GetFlightPath(player.gameObject);
+				if(flightCollisions[0].MovementDirection != _movementData.MovementDirection) {
+					_movementData = flightCollisions[0];
+				}
+				collisionsSinceLastPlayerCollision = 0;
 
 				var lm = GameManager.Instance.LevelManager;
 				var otherPlayer = player.Side == PlayerSide.Left ? lm.RightPlayer : lm.LeftPlayer;
 				if(!otherPlayer.PlayerControlled) {
-					otherPlayer.GoToLocation(fd.Last().position);
+					otherPlayer.GoToLocation(
+						flightCollisions.Last().Position
+						//flightCollisions.FindLast( p => Mathf.Abs(p.Position.x) - 16f < 0.1f ).Position
+					);
 				}
 			} else {
-				_movementData.HandleNonPlayerCollision(dot, normal);
+				collisionsSinceLastPlayerCollision++;
+				if( flightCollisions != null && flightCollisions.Count > collisionsSinceLastPlayerCollision ) {
+					_movementData.HandleNonPlayerCollision(dot, normal, flightCollisions[collisionsSinceLastPlayerCollision]);
+				} 
+				else {
+					_movementData.HandleNonPlayerCollision(dot, normal);
+				}		
 				_movementData.CalculateCurve();
 			}
 		}

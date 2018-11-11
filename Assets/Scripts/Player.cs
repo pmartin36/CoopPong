@@ -20,7 +20,7 @@ public class Player : MonoBehaviour
 	private static float yMaximum;
 	public PlayerSide Side { get; set; }
 
-	private BoxCollider2D bodyCollider;
+	private CapsuleCollider2D capCollider;
 
 	private bool pipsOut;
 	private float timeSinceLastEnergyUse;
@@ -40,13 +40,12 @@ public class Player : MonoBehaviour
         ResetMoveSpeed();
 		Side = transform.position.x > 0 ? PlayerSide.Right : PlayerSide.Left;
 		Energy = 1;
-		
-		bodyCollider = GetComponentInChildren<BoxCollider2D>();
-		var circleCollider = GetComponentInChildren<CircleCollider2D>();
-		Width = (bodyCollider.size.y * bodyCollider.transform.lossyScale.y + circleCollider.radius * Mathf.Abs(circleCollider.transform.lossyScale.y) * 2);
+
+		capCollider = GetComponent<CapsuleCollider2D>();
+		Width = capCollider.size.y * transform.lossyScale.y;
 		yMaximum = Camera.main.orthographicSize - (Width / 2f);
 
-		AimAssist = AimAssist.Light;
+		AimAssist = AimAssist.Heavy;
 	}
 
     // Update is called once per frame
