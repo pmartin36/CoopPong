@@ -14,8 +14,8 @@ public class Ball : MonoBehaviour
 		}
 	}
 
-	private List<MovementData> flightCollisions;
-	private int collisionsSinceLastPlayerCollision = 0;
+	private List<MovementData> projectedFlight;
+	private int projectedFlightIndex = 0;
 
 	private LayerMask collidableLayermask;
 	private LayerMask targetLayermask;
@@ -48,19 +48,22 @@ public class Ball : MonoBehaviour
     // Update is called once per frame
     void FixedUpdate()
     {
-		_movementData.Update(Time.fixedDeltaTime);
-		transform.position = _movementData.Position;
-		Debug.DrawLine(lastPosition, transform.position, Color.red, 2f);
+		if(projectedFlight != null && projectedFlight.Count > projectedFlightIndex - 1) {
+			projectedFlightIndex++;
+			_movementData = projectedFlight[projectedFlightIndex];
+			transform.position = _movementData.Position;
+			Debug.DrawLine(lastPosition, transform.position, Color.red, 2f);
 
-		transform.Rotate(0, 0, Rotation * Time.fixedDeltaTime);
-		hitBetweenLastMove = Physics2D.Linecast(lastPosition, transform.position, collidableLayermask);
-		lastPosition = transform.position;
+			transform.Rotate(0, 0, Rotation * Time.fixedDeltaTime);
+			hitBetweenLastMove = Physics2D.Linecast(lastPosition, transform.position, 1 << LayerMask.NameToLayer("Player"));
+			lastPosition = transform.position;
+		}
 	}
 
 	private void GenerateRandomPositionAndDirection() {
 		AimAssist = AimAssist.None;
 		_movementData = new MovementData(
-			position: new Vector3(0f, 0.75f, 0),
+			position: new Vector3(0f, 0f, 0f),
 			//position: new Vector3(0f, 0.75f, 0),
 			movementDirection: new Vector3(16f, 9f, 0).normalized,
 			moveSpeed: BaseSpeed,
@@ -74,10 +77,11 @@ public class Ball : MonoBehaviour
 		//movementDirection = new Vector2(Random.Range(0.5f, 1f), Random.Range(0f, 0.4f)).normalized;
 		//Rotation = Random.Range(-90f, 90f);
 
-		GetFlightPath(null);
+		projectedFlight = GetFlightPath(null);
 	}
 
-	private List<MovementData> GetFlightPath(GameObject origin) {			
+	private List<MovementData> GetFlightPath(GameObject origin) {
+		projectedFlightIndex = 0;
 		MovementData md = new MovementData(_movementData);
 
 		List<MovementData> flightData = new List<MovementData>();
@@ -130,7 +134,7 @@ public class Ball : MonoBehaviour
 				waitingOnLastTargetHit = false;
 
 				if(closestLineHit.distance > castRadius) {
-					MovementData lastMd = flightData.Last();
+					MovementData lastMd = flightData[last_i];
 					Vector2 lastPosition = lastMd.Position;
 					float angle = Vector2.SignedAngle(md.Position - lastPosition, closestLineHit.point - lastPosition);
 					if(Mathf.Abs(angle) < 15f) {
@@ -138,18 +142,17 @@ public class Ball : MonoBehaviour
 						lastMd.CalculateCurve();
 						md = new MovementData(lastMd);			
 
-						i = last_i;
+						int startRangeRemove = last_i + 1;
+						flightData.RemoveRange(startRangeRemove, flightData.Count - startRangeRemove);
+						i = startRangeRemove;
 						last_i = 0;
 						aimAssistNeeded = false;
 					}
 				}
 			} else {
+				flightData.Add(new MovementData(md));
 				i++;
 			}	
-		}
-
-		if(md.Position != flightData.Last().Position) {
-			flightData.Add(new MovementData(md));
 		}
 
 		return flightData;
@@ -166,7 +169,7 @@ public class Ball : MonoBehaviour
 		var inc = actualMoveDirection; // For debug	
 
 		if (dot < 0) {
-			if (collision.collider.tag == "Player" && Mathf.Abs(normal.x) > 0.1f ) {
+			if (collision.collider.tag == "Player" && Mathf.Abs(normal.x) > 0.1f) {
 				var player = collision.collider.GetComponentInParent<Player>();
 				Vector3 point = hitBetweenLastMove.collider == collision.collider ? hitBetweenLastMove.point : cp.point;
 				_movementData.MovementDirection = player.GetBallTrajectory(point, actualMoveDirection);
@@ -178,30 +181,30 @@ public class Ball : MonoBehaviour
 				aimAssistNeeded = AimAssist != AimAssist.None;
 
 				_movementData.CalculateCurve();
-				flightCollisions = GetFlightPath(player.gameObject);
-				if(flightCollisions[0].MovementDirection != _movementData.MovementDirection) {
-					_movementData = flightCollisions[0];
+				projectedFlight = GetFlightPath(player.gameObject);
+				if (projectedFlight[0].MovementDirection != _movementData.MovementDirection) {
+					_movementData = projectedFlight[0];
 				}
-				collisionsSinceLastPlayerCollision = 0;
 
 				var lm = GameManager.Instance.LevelManager;
 				var otherPlayer = player.Side == PlayerSide.Left ? lm.RightPlayer : lm.LeftPlayer;
-				if(!otherPlayer.PlayerControlled) {
+				if (!otherPlayer.PlayerControlled) {
 					otherPlayer.GoToLocation(
-						flightCollisions.Last().Position
-						//flightCollisions.FindLast( p => Mathf.Abs(p.Position.x) - 16f < 0.1f ).Position
+						//flightCollisions.Last().Position
+						projectedFlight.FindLast(p => Mathf.Abs(p.Position.x) - 16f < 0.1f).Position
 					);
 				}
-			} else {
-				collisionsSinceLastPlayerCollision++;
-				if( flightCollisions != null && flightCollisions.Count > collisionsSinceLastPlayerCollision ) {
-					_movementData.HandleNonPlayerCollision(dot, normal, flightCollisions[collisionsSinceLastPlayerCollision]);
-				} 
-				else {
-					_movementData.HandleNonPlayerCollision(dot, normal);
-				}		
-				_movementData.CalculateCurve();
 			}
+			//else {
+			//	projectedFlightIndex++;
+			//	if (projectedFlight != null && projectedFlight.Count > projectedFlightIndex) {
+			//		_movementData.HandleNonPlayerCollision(dot, normal, projectedFlight[projectedFlightIndex]);
+			//	}
+			//	else {
+			//		_movementData.HandleNonPlayerCollision(dot, normal);
+			//	}
+			//	_movementData.CalculateCurve();
+			//}
 		}
 		// Debug.Log($"normal: {normal}, incoming: {inc}, dot: {dot}, new: {movementDirection}");
 	}
