@@ -63,11 +63,10 @@ public class Ball : MonoBehaviour
 	private void GenerateRandomPositionAndDirection() {
 		AimAssist = AimAssist.None;
 		_movementData = new MovementData(
-			position: new Vector3(0f, 0f, 0f),
-			//position: new Vector3(0f, 0.75f, 0),
-			movementDirection: new Vector3(16f, 9f, 0).normalized,
+			position: new Vector2(0, Random.Range(-8f, 8f)),
+			movementDirection: new Vector2(Random.Range(0.5f, 1f), Random.Range(0f, 0.4f)).normalized,
 			moveSpeed: BaseSpeed,
-			rotation: 0,
+			rotation: Random.Range(-90f, 90f),
 			curve: 0,
 			curveDirection: Vector2.zero,
 			isCurving: false);
@@ -88,13 +87,16 @@ public class Ball : MonoBehaviour
 		float radius =  castRadius * (AimAssist == AimAssist.None ? 1 :
 							AimAssist == AimAssist.Light ? 4f : 6f);
 
-		RaycastHit2D closestLineHit = new RaycastHit2D();
+		// must pass fully through the target to minimum aim assist adjustment
+		// waitingOnLastTargetHit = have we passed fully through a target?[
+		// closestLineHit = linecast with the minimum distance to the target
 		bool waitingOnLastTargetHit = false;
+		RaycastHit2D closestLineHit = new RaycastHit2D();
 
 		flightData.Add(new MovementData(md));
 
-		int i = 0;
-		int last_i = 0;
+		int i = 1;
+		int lastCollisionIndex = 0; 
 		while (i < 25 || Mathf.Abs(md.Position.x) < 20f) { // TODO: Hardcoded x position?
 			var tempPosition = md.Position;
 			md.Update(Time.fixedDeltaTime);
@@ -113,7 +115,7 @@ public class Ball : MonoBehaviour
 							md.HandleNonPlayerCollision(dot, normal);
 							md.CalculateCurve();
 							flightData.Add(new MovementData(md));
-							last_i = i;
+							lastCollisionIndex = i;
 						}
 					}
 				}
@@ -130,22 +132,25 @@ public class Ball : MonoBehaviour
 
 			Debug.DrawLine(tempPosition, md.Position, aimAssistNeeded ? Color.green : Color.cyan, 3f);
 
+			// if we've passed through a target fully and we will be attempting aim assist
 			if (filteredHits.Length < 1 && waitingOnLastTargetHit) {
 				waitingOnLastTargetHit = false;
 
 				if(closestLineHit.distance > castRadius) {
-					MovementData lastMd = flightData[last_i];
+					MovementData lastMd = flightData[lastCollisionIndex];
 					Vector2 lastPosition = lastMd.Position;
-					float angle = Vector2.SignedAngle(md.Position - lastPosition, closestLineHit.point - lastPosition);
+					float angle = Vector2.SignedAngle(md.Position - lastPosition, closestLineHit.point - lastPosition) * 1.25f;
 					if(Mathf.Abs(angle) < 15f) {
-						lastMd.MovementDirection = lastMd.MovementDirection.Rotate(angle * 1.25f);
+						// adjust angle and recalculate
+						// remove all the points we've added since the last collision and reset md to that last collision point
+						lastMd.MovementDirection = lastMd.MovementDirection.Rotate(angle);
 						lastMd.CalculateCurve();
 						md = new MovementData(lastMd);			
 
-						int startRangeRemove = last_i + 1;
+						int startRangeRemove = lastCollisionIndex + 1;
 						flightData.RemoveRange(startRangeRemove, flightData.Count - startRangeRemove);
 						i = startRangeRemove;
-						last_i = 0;
+						lastCollisionIndex = 0;
 						aimAssistNeeded = false;
 					}
 				}
@@ -163,10 +168,7 @@ public class Ball : MonoBehaviour
 		Vector3 normal = hitBetweenLastMove.collider == collision.collider ? hitBetweenLastMove.normal : cp.normal;
 
 		Vector3 actualMoveDirection = _movementData.ActualMovementDirection;
-
 		float dot = Vector2.Dot(actualMoveDirection, normal);
-
-		var inc = actualMoveDirection; // For debug	
 
 		if (dot < 0) {
 			if (collision.collider.tag == "Player" && Mathf.Abs(normal.x) > 0.1f) {
@@ -195,16 +197,6 @@ public class Ball : MonoBehaviour
 					);
 				}
 			}
-			//else {
-			//	projectedFlightIndex++;
-			//	if (projectedFlight != null && projectedFlight.Count > projectedFlightIndex) {
-			//		_movementData.HandleNonPlayerCollision(dot, normal, projectedFlight[projectedFlightIndex]);
-			//	}
-			//	else {
-			//		_movementData.HandleNonPlayerCollision(dot, normal);
-			//	}
-			//	_movementData.CalculateCurve();
-			//}
 		}
 		// Debug.Log($"normal: {normal}, incoming: {inc}, dot: {dot}, new: {movementDirection}");
 	}
