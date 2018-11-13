@@ -31,8 +31,8 @@ public class Player : MonoBehaviour
 	private Coroutine PlayerMoveCoroutine;
 
 	// these fields only matter for cpu controlled player
-	private Vector3 CpuBasePlacement;
-	private Vector3 CpuOffsetPlacement;
+	private float CpuBasePlacement;
+	private float CpuOffsetPlacement;
 	private bool CpuReachedBasePlacement;
 
 	public float YMove {
@@ -78,11 +78,10 @@ public class Player : MonoBehaviour
 			transform.position = new Vector3(transform.position.x, modifiedY);
 		}
 		else {
-			float ms = CpuReachedBasePlacement ? BaseSpeed / 5f : BaseSpeed;
-			float diff = CpuOffsetPlacement.y - transform.position.y;
+			float diff = CpuOffsetPlacement - transform.position.y;
 			float diffAbs = Mathf.Abs(diff);
-			float distance = Mathf.Min(diffAbs, ms * Time.fixedDeltaTime);
-			if(diffAbs < 0.05f) {
+			float distance = Mathf.Min(diffAbs, MoveSpeed * Time.fixedDeltaTime);
+			if(!CpuReachedBasePlacement && diffAbs < 0.05f) {
 				CpuReachedBasePlacement = true;
 			}
 
@@ -107,16 +106,7 @@ public class Player : MonoBehaviour
 			else {
 				SlowModeActive = false;
 			}
-
-			//if(!OtherPlayer.PlayerControlled && OtherPlayer.CpuReachedBasePlacement) {
-			//	OtherPlayer.SetCpuOffsetPlacement( OtherPlayer.CpuOffsetPlacement.y + vertical * Time.deltaTime );
-			//}
 		} 
-	}
-
-	private void SetCpuOffsetPlacement(float diffFromBase) {
-		diffFromBase = Mathf.Clamp(diffFromBase, -1.2f, 1.2f);
-		CpuOffsetPlacement = new Vector3(CpuBasePlacement.x, Mathf.Clamp(CpuBasePlacement.y + diffFromBase, -yMaximum, yMaximum));
 	}
 
 	public void ResetMoveSpeed() {
@@ -146,7 +136,9 @@ public class Player : MonoBehaviour
 
 	public void GoToLocation(Vector3 p) {
 		CpuReachedBasePlacement = false;
-		CpuBasePlacement = new Vector3(transform.position.x, p.y);
-		SetCpuOffsetPlacement(Random.Range(-1.2f, 1.2f));
+		CpuBasePlacement = p.y;
+
+		float range = transform.lossyScale.y * 0.95f;
+		CpuOffsetPlacement = CpuBasePlacement + Random.Range( -range, range );
 	}
 }
