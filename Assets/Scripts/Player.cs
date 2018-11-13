@@ -34,6 +34,13 @@ public class Player : MonoBehaviour
 		get { return MovementInput * MoveSpeed; }
 	}
 
+	public Player OtherPlayer {
+		get {
+			var lm = GameManager.Instance.LevelManager;
+			return Side == PlayerSide.Left ? lm.RightPlayer : lm.LeftPlayer;
+		}
+	}
+
     // Start is called before the first frame update
     void Start()
     {

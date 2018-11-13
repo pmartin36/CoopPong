@@ -188,8 +188,7 @@ public class Ball : MonoBehaviour
 					_movementData = projectedFlight[0];
 				}
 
-				var lm = GameManager.Instance.LevelManager;
-				var otherPlayer = player.Side == PlayerSide.Left ? lm.RightPlayer : lm.LeftPlayer;
+				var otherPlayer = player.OtherPlayer;
 				if (!otherPlayer.PlayerControlled) {
 					otherPlayer.GoToLocation(
 						//flightCollisions.Last().Position
