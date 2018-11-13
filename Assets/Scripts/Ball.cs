@@ -19,6 +19,7 @@ public class Ball : MonoBehaviour
 
 	private LayerMask collidableLayermask;
 	private LayerMask targetLayermask;
+	private LayerMask playerLayermask;
 	private LayerMask collidableAndTargetLayermask;
 
 	private CircleCollider2D ccollider;
@@ -36,13 +37,13 @@ public class Ball : MonoBehaviour
 		ccollider = GetComponent<CircleCollider2D>();
 		castRadius = ccollider.radius * transform.localScale.x;
 
-		GenerateRandomPositionAndDirection();
-
 		collidableLayermask = 1 << LayerMask.NameToLayer("Collidable");
 		targetLayermask = 1 << LayerMask.NameToLayer("Target");
+		playerLayermask = 1 << LayerMask.NameToLayer("Player");
 		collidableAndTargetLayermask = collidableLayermask |  targetLayermask;
 
 		aimAssistNeeded = false;
+		GenerateRandomPositionAndDirection();
 	}
 
     // Update is called once per frame
@@ -55,7 +56,7 @@ public class Ball : MonoBehaviour
 			Debug.DrawLine(lastPosition, transform.position, Color.red, 2f);
 
 			transform.Rotate(0, 0, Rotation * Time.fixedDeltaTime);
-			hitBetweenLastMove = Physics2D.Linecast(lastPosition, transform.position, 1 << LayerMask.NameToLayer("Player"));
+			hitBetweenLastMove = Physics2D.Linecast(lastPosition, transform.position, playerLayermask);
 			lastPosition = transform.position;
 		}
 	}
@@ -191,8 +192,7 @@ public class Ball : MonoBehaviour
 				var otherPlayer = player.OtherPlayer;
 				if (!otherPlayer.PlayerControlled) {
 					otherPlayer.GoToLocation(
-						//flightCollisions.Last().Position
-						projectedFlight.FindLast(p => Mathf.Abs(p.Position.x) - 16f < 0.1f).Position
+						projectedFlight.FindLast(p => Mathf.Abs(p.Position.x) - 15.9f < 0.1f).Position
 					);
 				}
 			}

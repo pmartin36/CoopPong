@@ -30,14 +30,23 @@ public class Player : MonoBehaviour
 	public bool PlayerControlled;
 	private Coroutine PlayerMoveCoroutine;
 
+	// these fields only matter for cpu controlled player
+	private Vector3 CpuBasePlacement;
+	private Vector3 CpuOffsetPlacement;
+	private bool CpuReachedBasePlacement;
+
 	public float YMove {
 		get { return MovementInput * MoveSpeed; }
 	}
 
+	private Player _otherPlayer;
 	public Player OtherPlayer {
 		get {
-			var lm = GameManager.Instance.LevelManager;
-			return Side == PlayerSide.Left ? lm.RightPlayer : lm.LeftPlayer;
+			if(_otherPlayer == null) {
+				var lm = GameManager.Instance.LevelManager;
+				_otherPlayer = Side == PlayerSide.Left ? lm.RightPlayer : lm.LeftPlayer;
+			}
+			return _otherPlayer;
 		}
 	}
 
@@ -64,8 +73,22 @@ public class Player : MonoBehaviour
     }
 
 	private void FixedUpdate() {
-		float modifiedY = Mathf.Clamp(transform.position.y + MovementInput * MoveSpeed * Time.fixedDeltaTime, -yMaximum, yMaximum);
-		transform.position = new Vector3(transform.position.x, modifiedY);
+		if(PlayerControlled) {
+			float modifiedY = Mathf.Clamp(transform.position.y + MovementInput * MoveSpeed * Time.fixedDeltaTime, -yMaximum, yMaximum);
+			transform.position = new Vector3(transform.position.x, modifiedY);
+		}
+		else {
+			float ms = CpuReachedBasePlacement ? BaseSpeed / 5f : BaseSpeed;
+			float diff = CpuOffsetPlacement.y - transform.position.y;
+			float diffAbs = Mathf.Abs(diff);
+			float distance = Mathf.Min(diffAbs, ms * Time.fixedDeltaTime);
+			if(diffAbs < 0.05f) {
+				CpuReachedBasePlacement = true;
+			}
+
+			Vector3 direction = Vector3.up * Mathf.Sign(diff);
+			transform.position += direction * distance;
+		}
 	}
 
 	public void HandleInput(float vertical, bool flip, bool slow) {
@@ -84,7 +107,16 @@ public class Player : MonoBehaviour
 			else {
 				SlowModeActive = false;
 			}
-		}
+
+			//if(!OtherPlayer.PlayerControlled && OtherPlayer.CpuReachedBasePlacement) {
+			//	OtherPlayer.SetCpuOffsetPlacement( OtherPlayer.CpuOffsetPlacement.y + vertical * Time.deltaTime );
+			//}
+		} 
+	}
+
+	private void SetCpuOffsetPlacement(float diffFromBase) {
+		diffFromBase = Mathf.Clamp(diffFromBase, -1.2f, 1.2f);
+		CpuOffsetPlacement = new Vector3(CpuBasePlacement.x, Mathf.Clamp(CpuBasePlacement.y + diffFromBase, -yMaximum, yMaximum));
 	}
 
 	public void ResetMoveSpeed() {
@@ -100,9 +132,7 @@ public class Player : MonoBehaviour
 		angle *= Mathf.Sign(normalizedDistFromCenter);
 		Vector3 end = Utils.AngleToVector(angle);
 		end.x *= start.x;
-		// Debug.Log(end);
-
-		//Vector3 end = new Vector3(0.7f * start.x, 0.7f * Mathf.Sign(normalizedDistFromCenter)).normalized;
+		
 		return Vector3.Lerp( start, end, Mathf.Pow(normalizedDistFromCenter,2));
 	}
 
@@ -115,27 +145,8 @@ public class Player : MonoBehaviour
 	}
 
 	public void GoToLocation(Vector3 p) {
-		if(PlayerMoveCoroutine != null) {
-			StopCoroutine(PlayerMoveCoroutine);
-		}
-		p = new Vector3(transform.position.x, Mathf.Clamp(p.y + Random.Range(-1.2f,1.2f), -yMaximum, yMaximum));
-		PlayerMoveCoroutine = StartCoroutine(MoveToLocation(p));
-	}
-
-	private IEnumerator MoveToLocation(Vector3 p) {
-		float toGo = Mathf.Abs(p.y - transform.position.y);
-		Vector3 direction = Vector3.up * Mathf.Sign(p.y - transform.position.y);
-		while ( toGo > 0.1f ) {
-			float toMove = MoveSpeed * Time.deltaTime;
-			if( toGo > toMove ) {
-				transform.position += direction * toMove;
-			}
-			else {
-				transform.position += direction * toGo;
-				yield break;
-			}
-			toGo = Mathf.Abs(p.y - transform.position.y);
-			yield return new WaitForEndOfFrame();
-		}
+		CpuReachedBasePlacement = false;
+		CpuBasePlacement = new Vector3(transform.position.x, p.y);
+		SetCpuOffsetPlacement(Random.Range(-1.2f, 1.2f));
 	}
 }
