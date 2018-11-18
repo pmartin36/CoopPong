@@ -7,7 +7,18 @@ public class LevelManager : ContextManager
 	public Player LeftPlayer;
 	public Player RightPlayer;
 
+	public Spawner Spawner;
+
 	public bool IsSlowMode { get; private set; }
+
+	public override void Start() {
+		base.Start();
+		Spawner = new Spawner();
+	}
+
+	public void Update() {
+		Spawner.Update(Time.deltaTime);
+	}
 
 	public override void HandleInput(InputPackage p) {
 		if(LeftPlayer != null) {

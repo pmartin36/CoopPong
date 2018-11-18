@@ -189,11 +189,15 @@ public class Ball : MonoBehaviour
 					_movementData = projectedFlight[0];
 				}
 
-				var otherPlayer = player.OtherPlayer;
-				if (!otherPlayer.PlayerControlled) {
-					otherPlayer.GoToLocation(
-						projectedFlight.FindLast(p => Mathf.Abs(p.Position.x) - 15.9f < 0.1f).Position
-					);
+				
+				Vector3 lastPosition = projectedFlight.Last().Position;
+				if( Mathf.Abs(lastPosition.x) > 16f ) {
+					var lm = GameManager.Instance.LevelManager;
+					Player targetedPlayer = lastPosition.x < 0f ? lm.LeftPlayer : lm.RightPlayer;
+					if (!targetedPlayer.PlayerControlled) {
+						Vector3 poi = projectedFlight.FindLast(p => Mathf.Abs(p.Position.x) - 15.9f < 0.1f).Position;
+						targetedPlayer.GoToLocation(poi);
+					}
 				}
 			}
 		}

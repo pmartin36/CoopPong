@@ -1,10 +1,22 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 public enum PlayerSide {
 	Left,
 	Right
+}
+
+public struct MinMax {
+	public float Min { get; set; }
+	public float Max { get; set; }
+
+	public MinMax(float min, float max) : this() {
+		Min = min;
+		Max = max;
+	}
 }
 
 public class Player : MonoBehaviour
@@ -18,7 +30,10 @@ public class Player : MonoBehaviour
 	public float MoveSpeed { get; set; }
 
 	private static float yMaximum;
+	public MinMax MovementRange;
 	public PlayerSide Side { get; set; }
+
+	public StatusEffect StatusEffects;
 
 	private CapsuleCollider2D capCollider;
 
@@ -28,7 +43,8 @@ public class Player : MonoBehaviour
 	public AimAssist AimAssist { get; set; }
 
 	public bool PlayerControlled;
-	private Coroutine PlayerMoveCoroutine;
+
+	private SpriteRenderer[] spriteRenderers;
 
 	// these fields only matter for cpu controlled player
 	private float CpuBasePlacement;
@@ -57,11 +73,14 @@ public class Player : MonoBehaviour
 		Side = transform.position.x > 0 ? PlayerSide.Right : PlayerSide.Left;
 		Energy = 1;
 
+		spriteRenderers = GetComponentsInChildren<SpriteRenderer>();
+
 		capCollider = GetComponent<CapsuleCollider2D>();
 		Width = capCollider.size.y * transform.lossyScale.y;
 		yMaximum = Camera.main.orthographicSize - (Width / 2f);
+		MovementRange = new MinMax(-yMaximum, yMaximum);
 
-		AimAssist = AimAssist.Heavy;
+		AimAssist = AimAssist.Light;
 	}
 
     // Update is called once per frame
@@ -74,7 +93,7 @@ public class Player : MonoBehaviour
 
 	private void FixedUpdate() {
 		if(PlayerControlled) {
-			float modifiedY = Mathf.Clamp(transform.position.y + MovementInput * MoveSpeed * Time.fixedDeltaTime, -yMaximum, yMaximum);
+			float modifiedY = Mathf.Clamp(transform.position.y + MovementInput * MoveSpeed * Time.fixedDeltaTime, MovementRange.Min, MovementRange.Max);
 			transform.position = new Vector3(transform.position.x, modifiedY);
 		}
 		else {
@@ -85,8 +104,9 @@ public class Player : MonoBehaviour
 				CpuReachedBasePlacement = true;
 			}
 
-			Vector3 direction = Vector3.up * Mathf.Sign(diff);
-			transform.position += direction * distance;
+			float direction = Mathf.Sign(diff);
+			var modifiedY = Mathf.Clamp(transform.position.y + direction * distance, MovementRange.Min, MovementRange.Max);
+			transform.position = new Vector3(transform.position.x, modifiedY);
 		}
 	}
 
@@ -139,6 +159,51 @@ public class Player : MonoBehaviour
 		CpuBasePlacement = p.y;
 
 		float range = transform.lossyScale.y * 0.95f;
-		CpuOffsetPlacement = CpuBasePlacement + Random.Range( -range, range );
+		CpuOffsetPlacement = CpuBasePlacement + UnityEngine.Random.Range(-range, range );
+	}
+
+	public void AddStatusEffect(IEffector effector) {
+		StatusEffects &= effector.Effect;
+		effector.Destroyed += EffectorDestroyed;
+
+		switch (effector.Effect) {
+			case StatusEffect.Slowed:
+				MoveSpeed *= 0.5f;
+				foreach(SpriteRenderer sr in spriteRenderers) {
+					sr.color = new Color(.7f, .85f, .75f);
+				}
+				break;
+			case StatusEffect.Jailed:
+				MovementRange = new MinMax(
+					Mathf.Max(-yMaximum, transform.position.y - 3f),
+					Mathf.Min(yMaximum, transform.position.y + 3f)
+				);
+				break;
+			case StatusEffect.Blinded:
+				break;
+			default:
+				break;
+		}
+	}
+
+	public void EffectorDestroyed(object sender, EventArgs e) {
+		StatusEffect effectRemoved = (sender as IEffector).Effect;
+		StatusEffects &= ~effectRemoved;
+
+		switch (effectRemoved) {
+			case StatusEffect.Slowed:
+				MoveSpeed *= 2f;
+				foreach (SpriteRenderer sr in spriteRenderers) {
+					sr.color = Color.white;
+				}
+				break;
+			case StatusEffect.Jailed:
+				MovementRange = new MinMax(-yMaximum, yMaximum);
+				break;
+			case StatusEffect.Blinded:
+				break;
+			default:
+				break;
+		}
 	}
 }

@@ -15,4 +15,11 @@ public static class VectorExtension {
 		v.y = (sin * tx) + (cos * ty);
 		return v;
 	}
+
+	public static Vector3 MoveTowards(this Vector3 v, Vector3 destination, float moveSpeed) {
+		var diff = (destination - v);
+		var mag = diff.magnitude;
+		return v + diff.normalized * (mag > moveSpeed ? moveSpeed : mag);
+		
+	}
 }
