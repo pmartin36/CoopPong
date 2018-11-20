@@ -7,6 +7,8 @@ public class LevelManager : ContextManager
 	public Player LeftPlayer;
 	public Player RightPlayer;
 
+	public SpawnExport SpawnData;
+
 	public Spawner Spawner;
 
 	public bool IsSlowMode { get; private set; }

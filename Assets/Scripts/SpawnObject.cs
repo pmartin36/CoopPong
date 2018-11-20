@@ -13,29 +13,33 @@ public interface ISpawnable {
 	event EventHandler Destroyed;
 }
 
+[Serializable]
 public class SpawnObjectInfo {
 	public int ParentId { get; set; }
-	public GameObject Object { get; set; }
+	public float SpawnTime { get; set; }
 	public SpawnProperties Properties { get; set; }
 	public SpawnType SpawnType { get; set; }
 
-	public SpawnObjectInfo(int parentId, GameObject obj, SpawnProperties properties, SpawnType spawnType) {
+	public SpawnObjectInfo(int parentId, float spawnTime, SpawnProperties properties, SpawnType spawnType) {
 		ParentId = parentId;
-		Object = obj;
+		SpawnTime = spawnTime;
+
 		Properties = properties;
 		SpawnType = spawnType;
 	}
-
-
 }
 
 public class SpawnObject {
-	public float SpawnTime { get; set; }
+	public GameObject Object { get; set; }
 	public bool ReadyToSpawn { get; set; } = false;
 	public SpawnObjectInfo SpawnInfo { get; set; }
+	public float SpawnTime { 
+		get => SpawnInfo.SpawnTime;
+		set => SpawnInfo.SpawnTime = value;
+	}
 
-	public SpawnObject(float spawnTime, SpawnObjectInfo info) {
-		SpawnTime = spawnTime;
+	public SpawnObject(GameObject obj, SpawnObjectInfo info) {
+		Object = obj;
 		SpawnInfo = info;
 	}
 
@@ -53,6 +57,6 @@ public class SpawnObject {
 
 	public ISpawnable Spawn() {
 		ReadyToSpawn = false;
-		return UnityEngine.Object.Instantiate(SpawnInfo.Object).GetComponent<MonoBehaviour>() as ISpawnable;
+		return UnityEngine.Object.Instantiate(Object).GetComponent<MonoBehaviour>() as ISpawnable;
 	}
 }

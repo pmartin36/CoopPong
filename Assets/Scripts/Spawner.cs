@@ -2,11 +2,16 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class SpawnProperties { }
+[Serializable]
+public class SpawnProperties : ScriptableObject { }
+[Serializable]
+public class SpawnExport : ScriptableObject {
+	public SpawnObjectInfo[] SpawnInfo;
+}
 
 public class Spawner {
 	
-	private List<SpawnObject> SpawnObjects;
+	public List<SpawnObject> SpawnObjects;
 	private SpawnObject NextSpawn;
 
 	private GameObject SlowEnemyPrefab;
@@ -21,11 +26,11 @@ public class Spawner {
 
 		Vector3 pos = new Vector3(UnityEngine.Random.Range(-12f, 12f), UnityEngine.Random.Range(-8f, 8f));
 		SpawnObjects.Add(
-			new SpawnObject(1, new SpawnObjectInfo(-1, SlowEnemyPrefab, new SlowEnemyProperties(pos), SpawnType.Slow))
+			new SpawnObject(SlowEnemyPrefab, new SpawnObjectInfo(-1, 1, new SlowEnemyProperties(pos), SpawnType.Slow))
 		);
 		pos = new Vector3(UnityEngine.Random.Range(-12f, 12f), UnityEngine.Random.Range(-8f, 8f));
 		SpawnObjects.Add(
-			new SpawnObject(5, new SpawnObjectInfo(-1, JailEnemyPrefab, new JailEnemyProperties(pos), SpawnType.Jail))
+			new SpawnObject(JailEnemyPrefab, new SpawnObjectInfo(-1, 5, new JailEnemyProperties(pos), SpawnType.Jail))
 		);
 
 		dependencies = new Dictionary<int, List<int>>();
