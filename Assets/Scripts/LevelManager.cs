@@ -15,7 +15,7 @@ public class LevelManager : ContextManager
 
 	public override void Start() {
 		base.Start();
-		Spawner = new Spawner();
+		Spawner = new Spawner(SpawnData.SpawnInfo);
 	}
 
 	public void Update() {

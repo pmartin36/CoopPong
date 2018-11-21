@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 [Serializable]
@@ -20,25 +21,15 @@ public class Spawner {
 	private int spawnIndex;
 	private Dictionary<int, List<int>> dependencies;
 
-	public Spawner() {
-		SpawnObjects = new List<SpawnObject>();
+	public Spawner(SpawnObjectInfo[] spawnInfo) {
 		LoadAllSpawnedObjects();
-
-		Vector3 pos = new Vector3(UnityEngine.Random.Range(-12f, 12f), UnityEngine.Random.Range(-8f, 8f));
-		SpawnObjects.Add(
-			new SpawnObject(SlowEnemyPrefab, new SpawnObjectInfo(-1, 1, new SlowEnemyProperties(pos), SpawnType.Slow))
-		);
-		pos = new Vector3(UnityEngine.Random.Range(-12f, 12f), UnityEngine.Random.Range(-8f, 8f));
-		SpawnObjects.Add(
-			new SpawnObject(JailEnemyPrefab, new SpawnObjectInfo(-1, 5, new JailEnemyProperties(pos), SpawnType.Jail))
-		);
-
+		SpawnObjects = spawnInfo.Select( info => ConstructSpawnObjectFromInfo(info) ).ToList();
 		dependencies = new Dictionary<int, List<int>>();
-		for(int i = 0; i < SpawnObjects.Count; i++) {
+		for (int i = 0; i < SpawnObjects.Count; i++) {
 			var spawnedObject = SpawnObjects[i];
 			int parentId = spawnedObject.SpawnInfo.ParentId;
 			if (parentId >= 0) {
-				if( dependencies.ContainsKey(parentId) ) {
+				if (dependencies.ContainsKey(parentId)) {
 					dependencies.Add(parentId, new List<int>() { i });
 				}
 				else {
@@ -49,6 +40,25 @@ public class Spawner {
 				spawnedObject.ReadyToSpawn = true;
 			}
 		}
+	}
+
+	private SpawnObject ConstructSpawnObjectFromInfo(SpawnObjectInfo info) {
+		GameObject o = null;
+		switch (info.SpawnType) {
+			case SpawnType.Slow:
+				o = SlowEnemyPrefab;
+				break;
+			case SpawnType.Jail:
+				o = JailEnemyPrefab;
+				break;
+			case SpawnType.Blind:
+				break;
+			case SpawnType.Boss:
+				break;
+			default:
+				break;
+		}
+		return new SpawnObject(o, info);
 	}
 
 	public void LoadAllSpawnedObjects() {

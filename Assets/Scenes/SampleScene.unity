@@ -1088,7 +1088,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   LeftPlayer: {fileID: 1887602410}
   RightPlayer: {fileID: 918860357}
-  SpawnData: {fileID: 11400000, guid: 041b36b504531954894f8d5ca1e67af7, type: 2}
+  SpawnData: {fileID: 11400000, guid: 38439ea99e99349479f198b1e013c5ed, type: 2}
 --- !u!4 &1227886840
 Transform:
   m_ObjectHideFlags: 0
