@@ -62,10 +62,9 @@ public class SpawnInfoGUI {
 					case SpawnType.Blind:
 						Info.Properties = new SpawnProperties();
 						break;
+					default:
 					case SpawnType.Boss:
 						Info.Properties = new SpawnProperties();
-						break;
-					default:
 						break;
 				}			
 				editor = Editor.CreateEditor(Info.Properties, typeof(PropertiesEditor));	
@@ -99,17 +98,19 @@ class SpawnTimeline : EditorWindow {
 		EditorWindow.GetWindow<SpawnTimeline>("Spawn Timeline");
 	}
 
-	public void Awake() {
+	private void OnEnable() {
+		EditorApplication.playModeStateChanged -= PlayModeStateChanged;
 		EditorApplication.playModeStateChanged += PlayModeStateChanged;
 	}
 
-	public void OnDestroy() {
+	private void OnDisable() {
 		EditorApplication.playModeStateChanged -= PlayModeStateChanged;
-		SaveSpawnInfo();
 	}
 
 	public void PlayModeStateChanged(PlayModeStateChange state) {
 		if(state == PlayModeStateChange.ExitingEditMode) {
+			// switching to play mode - saving
+			Debug.Log("switching to play mode");
 			SaveSpawnInfo();
 		}
 	}
@@ -168,7 +169,6 @@ class SpawnTimeline : EditorWindow {
 	}
 
 	private void ClearSelectionAndSave() { 
-		Debug.Log("Clear Selection and Save");
 		SaveSpawnInfo();
 		SpawnInfo.Clear();
 		buttonsEnabled = false;
@@ -181,6 +181,7 @@ class SpawnTimeline : EditorWindow {
 			EditorUtility.SetDirty(asset);
 			(asset as SpawnExport).SpawnInfo = si;
 			AssetDatabase.SaveAssets();
+			AssetDatabase.Refresh();
 		}
 	}
 
