@@ -1,17 +1,6 @@
 ﻿using System;
 using UnityEngine;
 
-[Serializable]
-public class SlowEnemyProperties : SpawnProperties {
-	public Vector3 RestingPosition;
-	public bool Test;
-
-	public SlowEnemyProperties() { }
-	public SlowEnemyProperties(Vector3 v) {
-		RestingPosition = v;
-	}
-}
-
 public class SlowEnemy : MonoBehaviour, IEffector, ISpawnable {
 
 	public bool Spawning { get; set; }

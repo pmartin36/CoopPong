@@ -3,13 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
-[Serializable]
-public class SpawnProperties : ScriptableObject { }
-[Serializable]
-public class SpawnExport : ScriptableObject {
-	public SpawnObjectInfo[] SpawnInfo;
-}
-
 public class Spawner {
 	
 	public List<SpawnObject> SpawnObjects;
