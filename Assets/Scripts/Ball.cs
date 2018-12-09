@@ -211,6 +211,7 @@ public class Ball : MonoBehaviour
 	public void OnTriggerEnter2D(Collider2D collision) {
 		if (collision.tag == "ScoreZone") {
 			GenerateRandomPositionAndDirection();
+			GameManager.Instance.LevelManager.PlayerLifeLost();
 		}
 	}
 }

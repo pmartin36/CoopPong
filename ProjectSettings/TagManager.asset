@@ -5,6 +5,10 @@ TagManager:
   serializedVersion: 2
   tags:
   - ScoreZone
+  - PlayerCapTop
+  - PlayerBody
+  - PlayerCapBottom
+  - LaserShot
   layers:
   - Default
   - TransparentFX

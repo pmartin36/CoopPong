@@ -2,31 +2,16 @@
 using UnityEngine;
 
 public enum SpawnType {
-	Slow,
+	Small,
 	Jail,
+	Laser,
 	Blind,
-	Boss
+	Special
 }
 
 public interface ISpawnable {
 	void Init(SpawnProperties props); // can/should be replaced with some sort of factory
 	event EventHandler Destroyed;
-}
-
-[Serializable]
-public class SpawnObjectInfo {
-	public int ParentId { get; set; }
-	public float SpawnTime { get; set; }
-	public SpawnProperties Properties { get; set; }
-	public SpawnType SpawnType { get; set; }
-
-	public SpawnObjectInfo(int parentId, float spawnTime, SpawnProperties properties, SpawnType spawnType) {
-		ParentId = parentId;
-		SpawnTime = spawnTime;
-
-		Properties = properties;
-		SpawnType = spawnType;
-	}
 }
 
 public class SpawnObject {

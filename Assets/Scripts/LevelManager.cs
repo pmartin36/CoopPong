@@ -7,7 +7,7 @@ public class LevelManager : ContextManager
 	public Player LeftPlayer;
 	public Player RightPlayer;
 
-	public SpawnExport SpawnData;
+	public SpawnExport SpawnDataAsset;
 
 	public Spawner Spawner;
 
@@ -15,7 +15,8 @@ public class LevelManager : ContextManager
 
 	public override void Start() {
 		base.Start();
-		Spawner = new Spawner(SpawnData.SpawnInfo);
+		SpawnExport spawnData = Instantiate(SpawnDataAsset);
+		Spawner = new Spawner(spawnData.SpawnInfo);
 	}
 
 	public void Update() {
@@ -48,6 +49,11 @@ public class LevelManager : ContextManager
 		}
 
 		return true;
+	}
+
+	public void PlayerLifeLost() {
+		LeftPlayer.gameObject.SetActive(true);
+		RightPlayer.gameObject.SetActive(true);
 	}
 
 	public void LateUpdate() {

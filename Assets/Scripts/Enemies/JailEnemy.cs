@@ -22,19 +22,23 @@ public class JailEnemy : MonoBehaviour, ISpawnable, IEffector {
 		Properties = props as JailEnemyProperties;
 		Spawning = true;
 
+		SelectTarget();
+
+		transform.position = new Vector3(Properties.RestingPosition.x, 15f, 0);
+	}
+
+	public void SelectTarget() {
 		var levelManager = GameManager.Instance.LevelManager;
 		targetedPlayer = UnityEngine.Random.value > 0.5f ? levelManager.RightPlayer : levelManager.LeftPlayer;
 		// target the computer if possible
 		if (!targetedPlayer.OtherPlayer.PlayerControlled) {
 			targetedPlayer = targetedPlayer.OtherPlayer;
 		}
-
-		transform.position = new Vector3(Properties.RestingPosition.x, 15f, 0);
 	}
 
 	public void Update() {
 		if (Spawning) {
-			transform.position = transform.position.MoveTowards(RestingPosition, 3f * Time.deltaTime); // not working
+			transform.position = transform.position.MoveTowards(RestingPosition, 3f * Time.deltaTime); 
 			if (Vector3.Distance(transform.position, RestingPosition) < 0.01f) {
 				SpawnComplete();
 			}
@@ -62,9 +66,7 @@ public class JailEnemy : MonoBehaviour, ISpawnable, IEffector {
 			JailBar b = Instantiate(JailBarPrefab);
 			b.transform.position = new Vector3(targetedPlayer.transform.position.x, targetedPlayer.MovementRange.Max + (targetedPlayer.Width + b.transform.lossyScale.y) / 2f);
 			Destroyed += b.JailerDestroyed;
-		}
-		
-		
+		}	
 	}
 
 	public void OnTriggerEnter2D(Collider2D collision) {

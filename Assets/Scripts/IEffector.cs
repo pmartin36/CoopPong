@@ -2,9 +2,10 @@
 
 [Flags]
 public enum StatusEffect {
-	Slowed = 1,
+	Shrunk = 1,
 	Jailed = 2,
-	Blinded = 4
+	Blinded = 4,
+	SoulSwap = 8
 }
 
 public interface IEffector {

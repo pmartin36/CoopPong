@@ -1,7 +1,10 @@
 ﻿using UnityEngine;
 
-public static class VectorExtension {
+public static class Extensions {
 
+	/**
+	* Vectors
+	**/
 	public static Vector3 Rotate(this Vector3 v, float degrees) {
 		return Rotate( (Vector2) v, degrees );
 	}
@@ -21,5 +24,12 @@ public static class VectorExtension {
 		var mag = diff.magnitude;
 		return v + diff.normalized * (mag > moveSpeed ? moveSpeed : mag);
 		
+	}
+
+	/**
+	 *  Etc 
+	 **/
+	public static void Destroy(this GameObject g, float time = 0) {
+		Object.Destroy(g, time);
 	}
 }

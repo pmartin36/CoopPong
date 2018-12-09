@@ -10,10 +10,10 @@ GameObject:
   m_Component:
   - component: {fileID: 5726064592597562495}
   - component: {fileID: 8764672371505064614}
+  - component: {fileID: 6608700506566958813}
   - component: {fileID: 4895313995751263397}
-  - component: {fileID: 1525092930034723110}
   m_Layer: 0
-  m_Name: Jail Enemy
+  m_Name: Small Enemy
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -27,7 +27,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7130645793338149111}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalPosition: {x: 1.8717766, y: 15, z: 0}
   m_LocalScale: {x: 2, y: 2, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
@@ -71,7 +71,7 @@ SpriteRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_Sprite: {fileID: 21300000, guid: a2e1b7a37475c8f4aa89a865d0908384, type: 3}
-  m_Color: {r: 0.027367389, g: 0.123602524, b: 0.38679248, a: 1}
+  m_Color: {r: 0.014328952, g: 0.4339623, b: 0.20513852, a: 1}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
@@ -81,6 +81,18 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
+--- !u!114 &6608700506566958813
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7130645793338149111}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 578e6a63b32888a49aea72c8ceec8a1b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!58 &4895313995751263397
 CircleCollider2D:
   m_ObjectHideFlags: 0
@@ -97,15 +109,3 @@ CircleCollider2D:
   m_Offset: {x: 0, y: 0}
   serializedVersion: 2
   m_Radius: 0.5
---- !u!114 &1525092930034723110
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7130645793338149111}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c43eb7f2b6d61e6478172166a7b13c6e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 

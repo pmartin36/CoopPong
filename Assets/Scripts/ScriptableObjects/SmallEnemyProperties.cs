@@ -4,12 +4,13 @@ using System;
 using UnityEditor;
 
 [Serializable]
-public class JailEnemyProperties : SpawnProperties
+public class SmallEnemyProperties : SpawnProperties
 {
-    public Vector3 RestingPosition;
+	public Vector3 RestingPosition;
+	public bool Test;
 
-    public JailEnemyProperties() { }
-    public JailEnemyProperties(Vector3 v)
+    public SmallEnemyProperties() { }
+    public SmallEnemyProperties(Vector3 v)
     {
         RestingPosition = v;
     }

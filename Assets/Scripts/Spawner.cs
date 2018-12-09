@@ -6,15 +6,17 @@ using UnityEngine;
 public class Spawner {
 	
 	public List<SpawnObject> SpawnObjects;
+	private int SpawnedObjects = 0;
 	private SpawnObject NextSpawn;
 
-	private GameObject SlowEnemyPrefab;
+	private GameObject SmallEnemyPrefab;
 	private GameObject JailEnemyPrefab;
+	private GameObject LaserEnemyPrefab;
 
 	private int spawnIndex;
 	private Dictionary<int, List<int>> dependencies;
 
-	public Spawner(SpawnObjectInfo[] spawnInfo) {
+	public Spawner(List<SpawnObjectInfo> spawnInfo) {
 		LoadAllSpawnedObjects();
 		SpawnObjects = spawnInfo.Select( info => ConstructSpawnObjectFromInfo(info) ).ToList();
 		dependencies = new Dictionary<int, List<int>>();
@@ -23,10 +25,10 @@ public class Spawner {
 			int parentId = spawnedObject.SpawnInfo.ParentId;
 			if (parentId >= 0) {
 				if (dependencies.ContainsKey(parentId)) {
-					dependencies.Add(parentId, new List<int>() { i });
-				}
-				else {
 					dependencies[parentId].Add(i);
+				}
+				else {	
+					dependencies.Add(parentId, new List<int>() { i });
 				}
 			}
 			else {
@@ -37,41 +39,47 @@ public class Spawner {
 
 	private SpawnObject ConstructSpawnObjectFromInfo(SpawnObjectInfo info) {
 		GameObject o = null;
-		switch (info.SpawnType) {
-			case SpawnType.Slow:
-				o = SlowEnemyPrefab;
+		var si = SpawnObjectInfo.CreateCopyFromAsset(info);
+		switch (si.SpawnType) {
+			case SpawnType.Small:
+				o = SmallEnemyPrefab;
 				break;
 			case SpawnType.Jail:
 				o = JailEnemyPrefab;
 				break;
+			case SpawnType.Laser:
+				o = LaserEnemyPrefab;
+				break;
 			case SpawnType.Blind:
 				break;
-			case SpawnType.Boss:
+			case SpawnType.Special:
 				break;
 			default:
 				break;
 		}
-		return new SpawnObject(o, info);
+		return new SpawnObject(o, si);
 	}
 
 	public void LoadAllSpawnedObjects() {
-		SlowEnemyPrefab = Resources.Load<GameObject>("Prefabs/Slow Enemy");
+		SmallEnemyPrefab = Resources.Load<GameObject>("Prefabs/Small Enemy");
 		JailEnemyPrefab = Resources.Load<GameObject>("Prefabs/Jail Enemy");
+		LaserEnemyPrefab = Resources.Load<GameObject>("Prefabs/Laser Enemy");
 	}
 
 	public void Update(float deltaTime) {
-		for (int i = 0; i < SpawnObjects.Count; i++) {
+		for (int i = SpawnedObjects; i < SpawnObjects.Count; i++) {
 			SpawnObject obj = SpawnObjects[i];
 			obj.Update(deltaTime);
 			ISpawnable spawn = obj.TrySpawn();
 			if(spawn != null) {
 				// spawn successful
-				spawn.Init(obj.SpawnInfo.Properties); // switch to correct spawn properties object
+				spawn.Init(obj.SpawnInfo.Properties);
 				if( dependencies.ContainsKey(i)) {
-					for(int j = 0; j < dependencies.Count; j++) {
-						SpawnObjects[j].ReadyToSpawn = true;
+					foreach(int d in dependencies[i]) {
+						SpawnObjects[d].ReadyToSpawn = true;
 					}
 				}
+				SpawnedObjects++;
 			}
 		}
 	}

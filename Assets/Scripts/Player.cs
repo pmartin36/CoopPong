@@ -23,11 +23,21 @@ public class Player : MonoBehaviour
 {
 	public float BaseSpeed;
 	public float Width { get; private set; }
+	public float BodyWidth {
+		get {
+			return (Width / 2f) - 0.25f;
+		}
+	}
+
+	public bool SoulSwapped { get; set; } = false;
+
 	public float Energy { get; private set; }
 	public bool SlowModeActive { get; private set; }
 
 	private float MovementInput;
 	public float MoveSpeed { get; set; }
+
+	public AimAssist AimAssist { get; set; }
 
 	private static float yMaximum;
 	public MinMax MovementRange;
@@ -35,17 +45,16 @@ public class Player : MonoBehaviour
 
 	public StatusEffect StatusEffects;
 
-	private CapsuleCollider2D capCollider;
-
 	private bool pipsOut;
 	private float timeSinceLastEnergyUse;
-
-	public AimAssist AimAssist { get; set; }
+	
+	private CapsuleCollider2D capsuleCollider;
+	private SpriteRenderer[] spriteRenderers;
+	private Transform body;
+	private Transform topCap;
+	private Transform bottomCap;
 
 	public bool PlayerControlled;
-
-	private SpriteRenderer[] spriteRenderers;
-
 	// these fields only matter for cpu controlled player
 	private float CpuBasePlacement;
 	private float CpuOffsetPlacement;
@@ -66,7 +75,6 @@ public class Player : MonoBehaviour
 		}
 	}
 
-    // Start is called before the first frame update
     void Start()
     {
         ResetMoveSpeed();
@@ -75,16 +83,25 @@ public class Player : MonoBehaviour
 
 		spriteRenderers = GetComponentsInChildren<SpriteRenderer>();
 
-		capCollider = GetComponent<CapsuleCollider2D>();
-		Width = capCollider.size.y * transform.lossyScale.y;
-		yMaximum = Camera.main.orthographicSize - (Width / 2f);
-		MovementRange = new MinMax(-yMaximum, yMaximum);
+		foreach(Transform t in transform) {
+			if(t.tag == "PlayerCapTop") {
+				topCap = t;
+			}
+			else if(t.tag == "PlayerBody") {
+				body = t;
+			}
+			else if(t.tag == "PlayerCapBottom") {
+				bottomCap = t;
+			}	
+		}
+
+		capsuleCollider = GetComponent<CapsuleCollider2D>();
+		SetBodyWidth(1.15f, false);
 
 		AimAssist = AimAssist.Light;
 	}
 
-    // Update is called once per frame
-    void Update()
+	void Update()
     {
         if(Energy < 1 && Time.time - timeSinceLastEnergyUse > 1f) {
 			Energy += 0.5f * Time.deltaTime; 
@@ -93,8 +110,7 @@ public class Player : MonoBehaviour
 
 	private void FixedUpdate() {
 		if(PlayerControlled) {
-			float modifiedY = Mathf.Clamp(transform.position.y + MovementInput * MoveSpeed * Time.fixedDeltaTime, MovementRange.Min, MovementRange.Max);
-			transform.position = new Vector3(transform.position.x, modifiedY);
+			MoveFromInput(MovementInput * MoveSpeed * Time.fixedDeltaTime);
 		}
 		else {
 			float diff = CpuOffsetPlacement - transform.position.y;
@@ -108,6 +124,11 @@ public class Player : MonoBehaviour
 			var modifiedY = Mathf.Clamp(transform.position.y + direction * distance, MovementRange.Min, MovementRange.Max);
 			transform.position = new Vector3(transform.position.x, modifiedY);
 		}
+	}
+
+	private void MoveFromInput(float delta) {
+		float modifiedY = Mathf.Clamp(transform.position.y + delta, MovementRange.Min, MovementRange.Max);
+		transform.position = new Vector3(transform.position.x, modifiedY);
 	}
 
 	public void HandleInput(float vertical, bool flip, bool slow) {
@@ -158,8 +179,27 @@ public class Player : MonoBehaviour
 		CpuReachedBasePlacement = false;
 		CpuBasePlacement = p.y;
 
-		float range = transform.lossyScale.y * 0.95f;
+		float range = Width * 0.475f;
 		CpuOffsetPlacement = CpuBasePlacement + UnityEngine.Random.Range(-range, range );
+	}
+
+	public void SetBodyWidth(float bodyWidth, bool animate = true) {
+		bodyWidth = Mathf.Clamp(bodyWidth, 0.25f, 2.5f);
+		// will animate in the future
+		animate = false;
+		if(animate) {
+
+		}
+		else {		
+			Width = (bodyWidth + 0.25f) * 2;
+			yMaximum = Camera.main.orthographicSize - (Width / 2);
+			MovementRange = new MinMax(-yMaximum, yMaximum);
+
+			capsuleCollider.size = new Vector2(capsuleCollider.size.x, Width);
+			body.localScale = new Vector2(body.localScale.x, bodyWidth);
+			topCap.localPosition = new Vector2(0, bodyWidth);
+			bottomCap.localPosition = new Vector2(0, -bodyWidth);
+		}
 	}
 
 	public void AddStatusEffect(IEffector effector) {
@@ -167,11 +207,8 @@ public class Player : MonoBehaviour
 		effector.Destroyed += EffectorDestroyed;
 
 		switch (effector.Effect) {
-			case StatusEffect.Slowed:
-				MoveSpeed *= 0.5f;
-				foreach(SpriteRenderer sr in spriteRenderers) {
-					sr.color = new Color(.7f, .85f, .75f);
-				}
+			case StatusEffect.Shrunk:
+				SetBodyWidth( BodyWidth - 0.5f );
 				break;
 			case StatusEffect.Jailed:
 				MovementRange = new MinMax(
@@ -191,11 +228,8 @@ public class Player : MonoBehaviour
 		StatusEffects &= ~effectRemoved;
 
 		switch (effectRemoved) {
-			case StatusEffect.Slowed:
-				MoveSpeed *= 2f;
-				foreach (SpriteRenderer sr in spriteRenderers) {
-					sr.color = Color.white;
-				}
+			case StatusEffect.Shrunk:
+				SetBodyWidth(BodyWidth + 0.5f);
 				break;
 			case StatusEffect.Jailed:
 				MovementRange = new MinMax(-yMaximum, yMaximum);
@@ -205,5 +239,9 @@ public class Player : MonoBehaviour
 			default:
 				break;
 		}
+	}
+
+	public void Hit() {
+		this.gameObject.SetActive(false);
 	}
 }
