@@ -15,6 +15,7 @@ public class Ball : MonoBehaviour
 	}
 
 	private List<MovementData> projectedFlight;
+	private List<int> expectedCollisionIndices;
 	private int projectedFlightIndex = 0;
 
 	private LayerMask collidableLayermask;
@@ -42,7 +43,6 @@ public class Ball : MonoBehaviour
 		playerLayermask = 1 << LayerMask.NameToLayer("Player");
 		collidableAndTargetLayermask = collidableLayermask |  targetLayermask;
 
-		aimAssistNeeded = false;
 		GenerateRandomPositionAndDirection();
 	}
 
@@ -52,41 +52,55 @@ public class Ball : MonoBehaviour
 		if(projectedFlight != null && projectedFlight.Count > projectedFlightIndex - 1) {
 			projectedFlightIndex++;
 			_movementData = projectedFlight[projectedFlightIndex];
-			transform.position = _movementData.Position;
-			Debug.DrawLine(lastPosition, transform.position, Color.red, 2f);
-
+			
+			var nextPosition = _movementData.Position;
 			transform.Rotate(0, 0, Rotation * Time.fixedDeltaTime);
-			hitBetweenLastMove = Physics2D.Linecast(lastPosition, transform.position, playerLayermask);
-			lastPosition = transform.position;
+			hitBetweenLastMove = Physics2D.Linecast(lastPosition, nextPosition, playerLayermask);
+			
+			if(hitBetweenLastMove.collider == null && expectedCollisionIndices.Count > 0 && expectedCollisionIndices[0]+1 == projectedFlightIndex) {
+				Debug.Log($"Expected collision at {expectedCollisionIndices[0]} but none occured - recalculating");
+				_movementData = projectedFlight[projectedFlightIndex-2];
+				projectedFlight = GetFlightPath(null, AimAssist.None);
+			}
+			else {
+				transform.position = nextPosition;
+				Debug.DrawLine(lastPosition, transform.position, Color.red, 2f);
+				lastPosition = transform.position;
+			}
 		}
 	}
 
 	private void GenerateRandomPositionAndDirection() {
-		AimAssist = AimAssist.None;
+		Vector3 position = new Vector2(0, Random.Range(-8f, 8f));
+		while (Physics2D.OverlapCircle(position, castRadius, collidableLayermask) != null) {
+			position = new Vector2(0, Random.Range(-8f, 8f));
+		}
+
 		_movementData = new MovementData(
-			position: new Vector2(0, Random.Range(-8f, 8f)),
-			movementDirection: new Vector2(Random.Range(0.5f, 1f), Random.Range(0f, 0.4f)).normalized,
+			position: position,
+			movementDirection: new Vector2(Random.Range(0.5f, 1f), Random.Range(-0.4f, 0.4f)).normalized,
 			moveSpeed: BaseSpeed,
-			rotation: Random.Range(-90f, 90f),
+			rotation: 0,
 			curve: 0,
 			curveDirection: Vector2.zero,
 			isCurving: false);
-		transform.position = _movementData.Position;
 
 		//transform.position = new Vector2(0, Random.Range(-8f, 8f));
 		//movementDirection = new Vector2(Random.Range(0.5f, 1f), Random.Range(0f, 0.4f)).normalized;
 		//Rotation = Random.Range(-90f, 90f);
 
-		projectedFlight = GetFlightPath(null);
+		projectedFlight = GetFlightPath(null, AimAssist.None);
+		transform.position = projectedFlight.First().Position;
 	}
 
-	private List<MovementData> GetFlightPath(GameObject origin) {
+	private List<MovementData> GetFlightPath(GameObject origin, AimAssist aimAssist) {
 		projectedFlightIndex = 0;
+		expectedCollisionIndices = new List<int>();
 		MovementData md = new MovementData(_movementData);
 
 		List<MovementData> flightData = new List<MovementData>();
-		float radius =  castRadius * (AimAssist == AimAssist.None ? 1 :
-							AimAssist == AimAssist.Light ? 4f : 6f);
+		float radius =  castRadius * (aimAssist == AimAssist.None ? 1 :
+							aimAssist == AimAssist.Light ? 4f : 6f);
 
 		// must pass fully through the target to minimum aim assist adjustment
 		// waitingOnLastTargetHit = have we passed fully through a target?[
@@ -103,7 +117,7 @@ public class Ball : MonoBehaviour
 			md.Update(Time.fixedDeltaTime);
 
 			var hits = Physics2D.CircleCastAll(tempPosition, radius, md.ActualMovementDirection, md.ActualMoveSpeed, collidableAndTargetLayermask);
-			var filteredHits = hits.Where( hit => hit.collider != null && hit.collider.gameObject != origin ).ToArray();
+			var filteredHits = hits.Where( hit => hit.collider != null && (i >= 25 ||  hit.collider.gameObject != origin) ).ToArray();
 			foreach (RaycastHit2D hit in filteredHits) {
 				if(hit.collider.gameObject.layer == LayerMask.NameToLayer("Collidable")) {
 					Vector2 actualMoveDirection = md.ActualMovementDirection;
@@ -113,6 +127,7 @@ public class Ball : MonoBehaviour
 						// I would like to not have to do this overlap circle but can't seem to get it to work with just math
 						var oc = Physics2D.OverlapCircle(md.Position, castRadius, collidableLayermask);
 						if(oc != null) {
+							expectedCollisionIndices.Add(i);
 							md.HandleNonPlayerCollision(dot, normal);
 							md.CalculateCurve();
 							flightData.Add(new MovementData(md));
@@ -161,6 +176,23 @@ public class Ball : MonoBehaviour
 			}	
 		}
 
+		// FOR DEBUG
+		//string s = "";
+		//foreach (var index in expectedCollisionIndices) {
+		//	s += index + ", ";
+		//}
+		//if (s.Length > 0) Debug.Log(s);
+
+		Vector3 lastPositionOfFlight = flightData.Last().Position;
+		if (Mathf.Abs(lastPositionOfFlight.x) > 16f) {
+			var lm = GameManager.Instance.LevelManager;
+			Player targetedPlayer = lastPositionOfFlight.x < 0f ? lm.LeftPlayer : lm.RightPlayer;
+			if (!targetedPlayer.PlayerControlled) {
+				Vector3 poi = flightData.FindLast(p => Mathf.Abs(p.Position.x) - 15.9f < 0.1f).Position;
+				targetedPlayer.GoToLocation(poi);
+			}
+		}
+
 		return flightData;
 	}
 
@@ -171,8 +203,10 @@ public class Ball : MonoBehaviour
 		Vector3 actualMoveDirection = _movementData.ActualMovementDirection;
 		float dot = Vector2.Dot(actualMoveDirection, normal);
 
-		if (dot < 0) {
-			if (collision.collider.tag == "Player" && Mathf.Abs(normal.x) > 0.1f) {
+		// Debug.Log($"Collision at: {projectedFlightIndex}");
+
+		if (collision.collider.tag == "Player") {
+			if (dot < 0 && Mathf.Abs(normal.x) > 0.1f) {
 				var player = collision.collider.GetComponentInParent<Player>();
 				Vector3 point = hitBetweenLastMove.collider == collision.collider ? hitBetweenLastMove.point : cp.point;
 				_movementData.MovementDirection = player.GetBallTrajectory(point, actualMoveDirection);
@@ -184,23 +218,24 @@ public class Ball : MonoBehaviour
 				aimAssistNeeded = AimAssist != AimAssist.None;
 
 				_movementData.CalculateCurve();
-				projectedFlight = GetFlightPath(player.gameObject);
+				projectedFlight = GetFlightPath(player.gameObject, AimAssist);
 				if (projectedFlight[0].MovementDirection != _movementData.MovementDirection) {
 					_movementData = projectedFlight[0];
 				}
-
-				
-				Vector3 lastPosition = projectedFlight.Last().Position;
-				if( Mathf.Abs(lastPosition.x) > 16f ) {
-					var lm = GameManager.Instance.LevelManager;
-					Player targetedPlayer = lastPosition.x < 0f ? lm.LeftPlayer : lm.RightPlayer;
-					if (!targetedPlayer.PlayerControlled) {
-						Vector3 poi = projectedFlight.FindLast(p => Mathf.Abs(p.Position.x) - 15.9f < 0.1f).Position;
-						targetedPlayer.GoToLocation(poi);
-					}
-				}
 			}
 		}
+		else if (collision.gameObject.layer == LayerMask.NameToLayer("Collidable")) {
+			if(expectedCollisionIndices.Count < 1 || expectedCollisionIndices[0] != projectedFlightIndex) {
+				// if there is an unexpected collision, recalculate trajectory
+				Debug.Log($"Unexpected collision ({projectedFlightIndex} instead of {(expectedCollisionIndices.Count > 0 ? expectedCollisionIndices[0].ToString() : "unavailable")}), recalculate trajectory");
+				_movementData.HandleNonPlayerCollision(dot, normal);
+				projectedFlight = GetFlightPath(collision.gameObject, AimAssist);
+			}
+			else {
+				expectedCollisionIndices.RemoveAt(0);
+			}
+		}
+
 		// Debug.Log($"normal: {normal}, incoming: {inc}, dot: {dot}, new: {movementDirection}");
 	}
 

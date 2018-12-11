@@ -192,7 +192,7 @@ public class Player : MonoBehaviour
 		}
 		else {		
 			Width = (bodyWidth + 0.25f) * 2;
-			yMaximum = Camera.main.orthographicSize - (Width / 2);
+			yMaximum = Camera.main.orthographicSize - (Width / 2) - 0.25f;
 			MovementRange = new MinMax(-yMaximum, yMaximum);
 
 			capsuleCollider.size = new Vector2(capsuleCollider.size.x, Width);

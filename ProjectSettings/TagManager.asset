@@ -46,3 +46,12 @@ TagManager:
   - name: Default
     uniqueID: 0
     locked: 0
+  - name: Button
+    uniqueID: 821755817
+    locked: 0
+  - name: Entities
+    uniqueID: 3570152227
+    locked: 0
+  - name: Side
+    uniqueID: 1614520993
+    locked: 0
