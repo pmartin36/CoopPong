@@ -2,13 +2,14 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class HideOnPress : ButtonEffected
-{
+public class HideOnPress : MonoBehaviour, IButtonEffected {
 	private SpriteRenderer spriteRenderer;
 	private Collider2D collider2d;
 
 	private bool Enabled = false;
 	Coroutine waitingForEnable;
+
+	public ButtonLocation ActedUponBy { get; set; }
 
 	private void SetEnabled(bool enabled) {
 		if(Enabled != enabled) {

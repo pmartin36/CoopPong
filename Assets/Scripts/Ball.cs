@@ -191,6 +191,10 @@ public class Ball : MonoBehaviour
 				Vector3 poi = flightData.FindLast(p => Mathf.Abs(p.Position.x) - 15.9f < 0.1f).Position;
 				targetedPlayer.GoToLocation(poi);
 			}
+			if(!targetedPlayer.OtherPlayer.PlayerControlled) {
+				Vector3 poi = new Vector3(targetedPlayer.OtherPlayer.transform.position.x, Random.Range(-1f, 1f));
+				targetedPlayer.OtherPlayer.GoToLocation(poi);
+			}
 		}
 
 		return flightData;

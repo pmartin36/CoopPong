@@ -9,6 +9,7 @@ TagManager:
   - PlayerBody
   - PlayerCapBottom
   - LaserShot
+  - SpinArm
   layers:
   - Default
   - TransparentFX

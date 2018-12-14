@@ -17,13 +17,23 @@ public class EffectButton : MonoBehaviour
 	private bool isBottom;
 
 	[SerializeField]
-	private List<ButtonEffected> Effected;
+	private List<GameObject> EffectedGameObjects;
+	private List<IButtonEffected> Effected;
 
 	[SerializeField]
 	private Player player;
 
+	private void OnValidate() {
+		for(int i = 0; i < EffectedGameObjects.Count; i++) {
+			if( EffectedGameObjects[i]?.GetComponent<IButtonEffected>() == null ){
+				EffectedGameObjects[i] = null;
+			}
+		}
+	}
+
 	private void Start() {
 		isBottom = buttonLocation == ButtonLocation.BottomLeft || buttonLocation == ButtonLocation.BottomRight;
+		Effected = EffectedGameObjects.Select( g => g.GetComponent<IButtonEffected>() ).ToList();
 	}
 
 	private void Update() {
