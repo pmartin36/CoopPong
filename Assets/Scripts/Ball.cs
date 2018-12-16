@@ -59,8 +59,7 @@ public class Ball : MonoBehaviour
 			
 			if(hitBetweenLastMove.collider == null && expectedCollisionIndices.Count > 0 && expectedCollisionIndices[0]+1 == projectedFlightIndex) {
 				Debug.Log($"Expected collision at {expectedCollisionIndices[0]} but none occured - recalculating");
-				if(projectedFlightIndex > 1)
-					_movementData = projectedFlight[projectedFlightIndex-2];
+				_movementData = projectedFlight[projectedFlightIndex-2];
 				projectedFlight = GetFlightPath(null, AimAssist.None);
 			}
 			else {
@@ -132,7 +131,7 @@ public class Ball : MonoBehaviour
 						var oc = Physics2D.OverlapCircle(md.Position, castRadius, collidableLayermask);
 						if(oc != null) {
 							expectedCollisionIndices.Add(i);
-							md.HandleNonPlayerCollision(dot, normal);
+							md.HandleNonPlayerCollision(dot, normal, Vector3.zero);
 							md.CalculateCurve();
 							flightData.Add(new MovementData(md));
 							lastCollisionIndex = i;
@@ -237,7 +236,20 @@ public class Ball : MonoBehaviour
 			if(expectedCollisionIndices.Count < 1 || expectedCollisionIndices[0] != projectedFlightIndex) {
 				// if there is an unexpected collision, recalculate trajectory
 				Debug.Log($"Unexpected collision ({projectedFlightIndex} instead of {(expectedCollisionIndices.Count > 0 ? expectedCollisionIndices[0].ToString() : "unavailable")}), recalculate trajectory");
-				_movementData.HandleNonPlayerCollision(dot, normal);
+
+				IMoving m = collision.gameObject.GetComponent<IMoving>();
+				Vector3 extra = Vector3.zero;
+				if (m != null) {
+					// verify going in same direction
+					Vector3 diff = m.GetMovementAmount(transform.position);
+					float diffdot = Vector2.Dot(diff, _movementData.ActualMovementDirection);
+					if (diffdot > 0) {
+						extra = diff;
+						Debug.Log($"Extra set to ({extra.x}, {extra.y})");
+					}
+				}
+						
+				_movementData.HandleNonPlayerCollision(dot, normal, extra);
 				projectedFlight = GetFlightPath(collision.gameObject, AimAssist);
 			}
 			else {

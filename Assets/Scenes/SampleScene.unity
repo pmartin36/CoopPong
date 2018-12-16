@@ -684,9 +684,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   buttonLocation: 2
-  EffectedGameObjects:
-  - {fileID: 1949865191}
-  - {fileID: 1611239160}
+  EffectedGameObjects: []
   player: {fileID: 918860357}
 --- !u!212 &346997436
 SpriteRenderer:
@@ -1542,7 +1540,7 @@ PrefabInstance:
     - target: {fileID: 8932928751224158282, guid: b2544b7e744a8794bbf0fc8e946b67c9,
         type: 3}
       propertyPath: PlayerControlled
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 918860361, guid: b2544b7e744a8794bbf0fc8e946b67c9, type: 3}
       propertyPath: m_Points.m_Paths.Array.data[0].Array.size
@@ -1973,12 +1971,6 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 9
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1611239160 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 4887320612460027666, guid: 66493518017046945a948a742643f7ea,
-    type: 3}
-  m_PrefabInstance: {fileID: 4887320610848788970}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1616494343
 GameObject:
   m_ObjectHideFlags: 0
@@ -2185,9 +2177,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   buttonLocation: 8
-  EffectedGameObjects:
-  - {fileID: 1949865191}
-  - {fileID: 1611239160}
+  EffectedGameObjects: []
   player: {fileID: 918860357}
 --- !u!212 &1829738869
 SpriteRenderer:
@@ -2335,9 +2325,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   buttonLocation: 1
-  EffectedGameObjects:
-  - {fileID: 1949865191}
-  - {fileID: 1611239160}
+  EffectedGameObjects: []
   player: {fileID: 1887602410}
 --- !u!212 &1920471989
 SpriteRenderer:
@@ -2566,9 +2554,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   buttonLocation: 4
-  EffectedGameObjects:
-  - {fileID: 1949865191}
-  - {fileID: 1611239160}
+  EffectedGameObjects: []
   player: {fileID: 1887602410}
 --- !u!212 &2102677773
 SpriteRenderer:
@@ -2770,7 +2756,8 @@ PrefabInstance:
       propertyPath: m_UsedByComposite
       value: 1
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: 3891240186215634217, guid: a63f03a90ad6dca409acece3644177f3, type: 3}
   m_SourcePrefab: {fileID: 100100000, guid: a63f03a90ad6dca409acece3644177f3, type: 3}
 --- !u!1001 &4887320610848788970
 PrefabInstance:

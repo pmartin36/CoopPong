@@ -5,7 +5,8 @@ using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
 
-public class SlidingObject : MonoBehaviour {
+public class SlidingObject : MonoBehaviour, IMoving {
+	private Vector3 LastFramePosition;
 	private MinMax Range;
 
 	[SerializeField]
@@ -20,6 +21,8 @@ public class SlidingObject : MonoBehaviour {
 		var pos = Object.transform.localPosition.y + diff;
 		pos = Mathf.Clamp(pos, Range.Min, Range.Max);
 		Object.transform.localPosition = new Vector2(0, pos);
+
+		LastFramePosition = Object.transform.localPosition;
 	}
 
 	public void Start() {
@@ -33,5 +36,9 @@ public class SlidingObject : MonoBehaviour {
 		if (newPosition >= Range.Max || newPosition <= Range.Min) {
 			Direction *= -1f;
 		}
+	}
+
+	public Vector3 GetMovementAmount(Vector3 position) {
+		return Object.transform.position - LastFramePosition;
 	}
 }

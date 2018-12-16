@@ -65,17 +65,18 @@ public class MovementData  {
 		Curve = 0;
 	}
 
-	public void HandleNonPlayerCollision(float dot, Vector3 normal, MovementData mdOverride = null) {
+	public void HandleNonPlayerCollision(float dot, Vector3 normal, Vector3 extraMovement, MovementData mdOverride = null) {
 		if (mdOverride != null) {
 			MovementDirection = mdOverride.MovementDirection;
 		}
 		else {
-			MovementDirection = ActualMovementDirection - 2 * dot * normal;
+			MovementDirection = ActualMovementDirection - 2 * dot * normal + extraMovement;
 			if (Mathf.Abs(MovementDirection.x) < 0.25f) {
 				MovementDirection = (MovementDirection + Mathf.Sign(Position.x) * Vector3.left).normalized;
 			}
+			CalculateCurve();
 		}
 		
-		MoveSpeed += 0.25f;
+		MoveSpeed += 0.25f + extraMovement.magnitude;
 	}
 }
