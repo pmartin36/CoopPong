@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 8764672371505064614}
   - component: {fileID: 4895313995751263397}
   - component: {fileID: 1525092930034723110}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: Jail Enemy
   m_TagString: Untagged
   m_Icon: {fileID: 0}

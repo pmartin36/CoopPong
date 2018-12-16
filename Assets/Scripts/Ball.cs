@@ -59,12 +59,13 @@ public class Ball : MonoBehaviour
 			
 			if(hitBetweenLastMove.collider == null && expectedCollisionIndices.Count > 0 && expectedCollisionIndices[0]+1 == projectedFlightIndex) {
 				Debug.Log($"Expected collision at {expectedCollisionIndices[0]} but none occured - recalculating");
-				_movementData = projectedFlight[projectedFlightIndex-2];
+				if(projectedFlightIndex > 1)
+					_movementData = projectedFlight[projectedFlightIndex-2];
 				projectedFlight = GetFlightPath(null, AimAssist.None);
 			}
 			else {
 				transform.position = nextPosition;
-				Debug.DrawLine(lastPosition, transform.position, Color.red, 2f);
+				Debug.DrawLine(lastPosition, transform.position, Color.red, 0.5f);
 				lastPosition = transform.position;
 			}
 		}
@@ -112,12 +113,15 @@ public class Ball : MonoBehaviour
 
 		int i = 1;
 		int lastCollisionIndex = 0; 
-		while (i < 25 || Mathf.Abs(md.Position.x) < 20f) { // TODO: Hardcoded x position?
+		while (Mathf.Abs(md.Position.x) < 20f) { // TODO: Hardcoded x position?
 			var tempPosition = md.Position;
 			md.Update(Time.fixedDeltaTime);
 
 			var hits = Physics2D.CircleCastAll(tempPosition, radius, md.ActualMovementDirection, md.ActualMoveSpeed, collidableAndTargetLayermask);
-			var filteredHits = hits.Where( hit => hit.collider != null && (i >= 25 ||  hit.collider.gameObject != origin) ).ToArray();
+			var filteredHits = hits.Where( hit => hit.collider != null ).ToArray();
+			if(filteredHits.Length > 0) {
+
+			}
 			foreach (RaycastHit2D hit in filteredHits) {
 				if(hit.collider.gameObject.layer == LayerMask.NameToLayer("Collidable")) {
 					Vector2 actualMoveDirection = md.ActualMovementDirection;
@@ -146,7 +150,8 @@ public class Ball : MonoBehaviour
 				}
 			}
 
-			Debug.DrawLine(tempPosition, md.Position, aimAssistNeeded ? Color.green : Color.cyan, 3f);
+			//Debug.DrawLine(tempPosition, md.Position, aimAssistNeeded ? Color.green : Color.cyan, i / 50f);
+			Debug.DrawLine(tempPosition, md.Position, aimAssistNeeded ? Color.green : Color.cyan, 1 + (i/50f));
 
 			// if we've passed through a target fully and we will be attempting aim assist
 			if (filteredHits.Length < 1 && waitingOnLastTargetHit) {
