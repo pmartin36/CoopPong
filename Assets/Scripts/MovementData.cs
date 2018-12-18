@@ -32,7 +32,9 @@ public class MovementData  {
 		d.Rotation,
 		d.Curve,
 		new Vector3(d.CurveDirection.x, d.CurveDirection.y),
-		d.IsCurving) { }
+		d.IsCurving) {
+		ActualMoveSpeed = d.ActualMoveSpeed;
+	}
 
 	public MovementData(Vector3 position, Vector3 movementDirection, float moveSpeed, float rotation, float curve, Vector3 curveDirection, bool isCurving) {
 		Position = position;
@@ -65,17 +67,12 @@ public class MovementData  {
 		Curve = 0;
 	}
 
-	public void HandleNonPlayerCollision(float dot, Vector3 normal, Vector3 extraMovement, MovementData mdOverride = null) {
-		if (mdOverride != null) {
-			MovementDirection = mdOverride.MovementDirection;
+	public void HandleNonPlayerCollision(float dot, Vector3 normal, Vector3 extraMovement) {
+		MovementDirection = ActualMovementDirection - 2 * dot * normal + extraMovement;
+		if (Mathf.Abs(MovementDirection.x) < 0.25f) {
+			MovementDirection = (MovementDirection + Mathf.Sign(Position.x) * Vector3.left).normalized;
 		}
-		else {
-			MovementDirection = ActualMovementDirection - 2 * dot * normal + extraMovement;
-			if (Mathf.Abs(MovementDirection.x) < 0.25f) {
-				MovementDirection = (MovementDirection + Mathf.Sign(Position.x) * Vector3.left).normalized;
-			}
-			CalculateCurve();
-		}
+		CalculateCurve();
 		
 		MoveSpeed += 0.25f + extraMovement.magnitude;
 	}
