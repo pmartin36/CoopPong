@@ -51,7 +51,7 @@ public class Spinner : MonoBehaviour, IMoving {
 		}
 
 		float currentAngle = Vector2.SignedAngle(Vector2.right, relativePosition);
-		float previousAngle = currentAngle + LastFrameSpinAmount;
+		float previousAngle = (currentAngle - LastFrameSpinAmount);
 
 		Vector3 lastPosition = new Vector3(
 			Mathf.Cos(previousAngle * Mathf.Deg2Rad) * distFromCenter + transform.position.x,
@@ -59,6 +59,6 @@ public class Spinner : MonoBehaviour, IMoving {
 		Vector3 currentPosition = new Vector3(
 			Mathf.Cos(currentAngle * Mathf.Deg2Rad) * distFromCenter + transform.position.x,
 			Mathf.Sin(currentAngle * Mathf.Deg2Rad) * distFromCenter + transform.position.y);
-		return currentPosition - lastPosition;
+		return (currentPosition - lastPosition) / Time.fixedDeltaTime;
 	}
 }

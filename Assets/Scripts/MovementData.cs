@@ -67,13 +67,28 @@ public class MovementData  {
 		Curve = 0;
 	}
 
-	public void HandleNonPlayerCollision(float dot, Vector3 normal, Vector3 extraMovement) {
-		MovementDirection = ActualMovementDirection - 2 * dot * normal + extraMovement;
+	public void HandleNonPlayerCollision(float dot, Vector3 normal, Vector3 extraMovement, float msIncrease = 0.25f, Vector3? surfaceData = null) {
+		float extraMs = extraMovement.magnitude;
+		MovementDirection = ((ActualMovementDirection - 2 * dot * normal) * ActualMoveSpeed + (extraMovement * extraMs)).normalized;
 		if (Mathf.Abs(MovementDirection.x) < 0.25f) {
 			MovementDirection = (MovementDirection + Mathf.Sign(Position.x) * Vector3.left).normalized;
 		}
 		CalculateCurve();
-		
-		MoveSpeed += 0.25f + extraMovement.magnitude;
+
+		if (surfaceData != null) {
+			Position = surfaceData.Value;
+		}
+
+		MoveSpeed = Mathf.Max(MoveSpeed + msIncrease, extraMs);
+	}
+}
+
+public class SurfacePositionData {
+	public float Radius { get; set; }
+	public Vector3 Position { get; set; }
+
+	public SurfacePositionData(Vector3 position, float radius) {
+		Radius = radius;
+		Position = position;
 	}
 }
