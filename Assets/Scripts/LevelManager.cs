@@ -9,18 +9,18 @@ public class LevelManager : ContextManager
 
 	public SpawnExport SpawnDataAsset;
 
-	public Spawner Spawner;
+	// public Spawner Spawner;
 
 	public bool IsSlowMode { get; private set; }
 
 	public override void Start() {
 		base.Start();
-		SpawnExport spawnData = Instantiate(SpawnDataAsset);
-		Spawner = new Spawner(spawnData.SpawnInfo);
+		// SpawnExport spawnData = Instantiate(SpawnDataAsset);
+		// Spawner = new Spawner(spawnData.SpawnInfo);
 	}
 
 	public void Update() {
-		Spawner.Update(Time.deltaTime);
+		// Spawner.Update(Time.deltaTime);
 	}
 
 	public override void HandleInput(InputPackage p) {
@@ -39,8 +39,8 @@ public class LevelManager : ContextManager
 		IsSlowMode = slowMode;
 		if(IsSlowMode) {
 			GameManager.Instance.TimeScale = 0.5f;
-			LeftPlayer.MoveSpeed *= 2f;
-			RightPlayer.MoveSpeed *= 2f;
+			LeftPlayer.MaxMoveSpeed *= 2f;
+			RightPlayer.MaxMoveSpeed *= 2f;
 		}
 		else {
 			GameManager.Instance.TimeScale = 1f;

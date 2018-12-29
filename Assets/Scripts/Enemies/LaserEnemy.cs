@@ -2,40 +2,26 @@
 using System.Collections;
 using System;
 
-public class LaserEnemy : MonoBehaviour, ISpawnable {
+public class LaserEnemy : MonoBehaviour {
 	public bool Spawning { get; set; }
-	public LaserEnemyProperties Properties { get; set; }
-	public Vector3 RestingPosition {
-		get => Properties.RestingPosition;
-		set => Properties.RestingPosition = value;
-	}
 
 	[SerializeField]
 	private LaserShot LaserShotPrefab;
 
 	public event EventHandler Destroyed;
 
-	void Start() {
-
-	}
-
-	public void Init(SpawnProperties props) {
-		Properties = props as LaserEnemyProperties;
+	private void OnEnable() {
 		Spawning = true;
-
-		transform.position = new Vector3(Properties.RestingPosition.x, 15f, 0);
+		StartCoroutine(SpawnOnDelay());
 	}
 
-	void Update() {
-		if (Spawning) {
-			transform.position = transform.position.MoveTowards(RestingPosition, 3f * Time.deltaTime);
-			if (Vector3.Distance(transform.position, RestingPosition) < 0.01f) {
-				SpawnComplete();
-			}
-		}
-		else {
+	IEnumerator SpawnOnDelay() {
+		yield return new WaitForSeconds(1f);
+		SpawnComplete();
+	}
 
-		}
+	private void Update() {
+
 	}
 
 	private void SpawnComplete() {
@@ -44,7 +30,9 @@ public class LaserEnemy : MonoBehaviour, ISpawnable {
 	}
 
 	public void OnTriggerEnter2D(Collider2D collision) {
-		Destroy(this.gameObject);
+		if(!Spawning) {
+			Destroy(this.gameObject);
+		}
 	}
 
 	public void OnDestroy() {

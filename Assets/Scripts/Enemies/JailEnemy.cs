@@ -2,14 +2,9 @@
 using System.Collections;
 using System;
 
-public class JailEnemy : MonoBehaviour, ISpawnable, IEffector {
+public class JailEnemy : MonoBehaviour, IEffector {
 
 	public bool Spawning { get; set; }
-	public JailEnemyProperties Properties { get; set; }
-	public Vector3 RestingPosition {
-		get => Properties.RestingPosition;
-		set => Properties.RestingPosition = value;
-	}
 
 	public StatusEffect Effect { get { return StatusEffect.Jailed; } }
 
@@ -18,13 +13,15 @@ public class JailEnemy : MonoBehaviour, ISpawnable, IEffector {
 	private Player targetedPlayer;
 	private static JailBar JailBarPrefab;
 
-	public void Init(SpawnProperties props) {
-		Properties = props as JailEnemyProperties;
+	public void OnEnable() {
 		Spawning = true;
-
 		SelectTarget();
+		StartCoroutine(SpawnOnDelay());
+	}
 
-		transform.position = new Vector3(Properties.RestingPosition.x, 15f, 0);
+	IEnumerator SpawnOnDelay() {
+		yield return new WaitForSeconds(1f);
+		SpawnComplete();
 	}
 
 	public void SelectTarget() {
@@ -33,18 +30,6 @@ public class JailEnemy : MonoBehaviour, ISpawnable, IEffector {
 		// target the computer if possible
 		if (!targetedPlayer.OtherPlayer.PlayerControlled) {
 			targetedPlayer = targetedPlayer.OtherPlayer;
-		}
-	}
-
-	public void Update() {
-		if (Spawning) {
-			transform.position = transform.position.MoveTowards(RestingPosition, 3f * Time.deltaTime); 
-			if (Vector3.Distance(transform.position, RestingPosition) < 0.01f) {
-				SpawnComplete();
-			}
-		}
-		else {
-
 		}
 	}
 
@@ -70,7 +55,9 @@ public class JailEnemy : MonoBehaviour, ISpawnable, IEffector {
 	}
 
 	public void OnTriggerEnter2D(Collider2D collision) {
-		Destroy(this.gameObject);
+		if (!Spawning) {
+			Destroy(this.gameObject);
+		}
 	}
 
 	public void OnDestroy() {

@@ -35,7 +35,8 @@ public class Player : MonoBehaviour
 	public bool SlowModeActive { get; private set; }
 
 	private float MovementInput;
-	public float MoveSpeed { get; set; }
+	public float MaxMoveSpeed { get; set; }
+	private float LastFrameMoveSpeed;
 
 	public AimAssist AimAssist;
 
@@ -61,7 +62,7 @@ public class Player : MonoBehaviour
 	private bool CpuReachedBasePlacement;
 
 	public float YMove {
-		get { return MovementInput * MoveSpeed; }
+		get { return MovementInput * MaxMoveSpeed; }
 	}
 
 	private Player _otherPlayer;
@@ -110,12 +111,12 @@ public class Player : MonoBehaviour
 
 	private void FixedUpdate() {
 		if(PlayerControlled) {
-			MoveFromInput(MovementInput * MoveSpeed * Time.fixedDeltaTime);
+			MoveFromInput(MovementInput);
 		}
 		else {
 			float diff = CpuOffsetPlacement - transform.position.y;
 			float diffAbs = Mathf.Abs(diff);
-			float distance = Mathf.Min(diffAbs, MoveSpeed * Time.fixedDeltaTime);
+			float distance = Mathf.Min(diffAbs, MaxMoveSpeed * Time.fixedDeltaTime);
 			if(!CpuReachedBasePlacement && diffAbs < 0.05f) {
 				CpuReachedBasePlacement = true;
 			}
@@ -126,7 +127,8 @@ public class Player : MonoBehaviour
 		}
 	}
 
-	private void MoveFromInput(float delta) {
+	private void MoveFromInput(float mInput) {
+		float delta = mInput * MaxMoveSpeed * Time.fixedDeltaTime;
 		float modifiedY = Mathf.Clamp(transform.position.y + delta, MovementRange.Min, MovementRange.Max);
 		transform.position = new Vector3(transform.position.x, modifiedY);
 	}
@@ -151,7 +153,7 @@ public class Player : MonoBehaviour
 	}
 
 	public void ResetMoveSpeed() {
-		MoveSpeed = BaseSpeed;
+		MaxMoveSpeed = BaseSpeed;
 	}
 
 	public Vector3 GetBallTrajectory(Vector3 point, Vector3 incoming) {
