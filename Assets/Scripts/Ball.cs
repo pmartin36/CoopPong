@@ -93,10 +93,9 @@ public class Ball : MonoBehaviour
 						}
 					}
 				}
-				else if (expectedCollisionIndices.Count < 1 || expectedCollisionIndices[0] != projectedFlightIndex-1) {
+				else if (expectedCollisionIndices.Count < 1 || expectedCollisionIndices[0] != projectedFlightIndex) {
 					// if there is an unexpected collision, recalculate trajectory
-					var s = $"Unexpected collision with {collider.gameObject.name} ({projectedFlightIndex-1} instead of {(expectedCollisionIndices.Count > 0 ? expectedCollisionIndices[0].ToString() : "unavailable")}), recalculate trajectory";
-					Debug.Log(s);
+					Debug.Log($"Unexpected collision with {collider.gameObject.name} ({projectedFlightIndex} instead of {(expectedCollisionIndices.Count > 0 ? expectedCollisionIndices[0].ToString() : "unavailable")}), recalculate trajectory");
 
 					IMoving m = collider.gameObject.GetComponent<IMoving>();
 					Vector3 extra = Vector3.zero;
@@ -104,14 +103,12 @@ public class Ball : MonoBehaviour
 						// verify going in same direction
 						Vector3 diff = m.GetMovementAmount(nextPosition);
 						float diffdot = Vector2.Dot(diff.normalized, lastMoveDirection);
-						if (diffdot < 0.5f) {
-							Debug.Log($"Adding {diff} with dot of {diffdot} and moveDirection of {lastMoveDirection}");
-							SurfacePositionData d = diff != Vector3.zero ? new SurfacePositionData(hitBetweenLastMove.point, ballRadius) : null;
-							_movementData.HandleNonPlayerCollision(dot, normal, diff, 0f, hitBetweenLastMove.centroid);
-						}		
+						diff = diffdot < 0.5f ? diff : Vector3.zero;
+						Debug.Log($"Adding {diff} with dot of {diffdot} and moveDirection of {lastMoveDirection}");
+						_movementData.HandleNonPlayerCollision(dot, normal, diff, 0f, hitBetweenLastMove.centroid);	
 					}
 					else {
-						_movementData.HandleNonPlayerCollision(dot, normal, extra, 0.25f, Vector3.zero);
+						_movementData.HandleNonPlayerCollision(dot, normal, extra, 0.25f, hitBetweenLastMove.centroid);
 					}
 
 					projectedFlight = GetFlightPath(collider, AimAssist);
@@ -124,8 +121,8 @@ public class Ball : MonoBehaviour
 				lastUpdateCollider = collider;
 			}
 			else {
-				if(expectedCollisionIndices.Count > 0 && expectedCollisionIndices[0] == projectedFlightIndex - 1) {
-					// Debug.Log($"Expected collision at {expectedCollisionIndices[0]} but none occured - recalculating");
+				if(expectedCollisionIndices.Count > 0 && expectedCollisionIndices[0] == projectedFlightIndex) {
+					Debug.Log($"Expected collision at {expectedCollisionIndices[0]} but none occured - recalculating");
 					_movementData = projectedFlight[projectedFlightIndex - 1];
 					projectedFlight = GetFlightPath(null, AimAssist.None);
 
@@ -156,8 +153,8 @@ public class Ball : MonoBehaviour
 			curveDirection: Vector2.zero,
 			isCurving: false);
 
-		//_movementData.Position = new Vector3(7.65f, 0f);
-		//_movementData.MovementDirection = new Vector2(8f,9f).normalized;
+		// _movementData.Position = new Vector3(0, 0f);
+		// _movementData.MovementDirection = Vector3.right;
 		// _movementData.MoveSpeed = BaseSpeed * 5f;
 		
 		transform.position = _movementData.Position;
@@ -180,15 +177,12 @@ public class Ball : MonoBehaviour
 		Collider2D colliderLast = origin;
 		RaycastHit2D closestLineHit = new RaycastHit2D();
 
-		int i = 0;
+		int i = 1;
 		int lastCollisionIndex = 0;
 		flightData.Add(new MovementData(md));
 		while (Mathf.Abs(md.Position.x) < 20f) { // TODO: Hardcoded x position?
-			var tempPosition = md.Position;
-			md.Update(Time.fixedDeltaTime);
-
 			if(aimAssistNeeded) {
-				var hit = Physics2D.OverlapCircle(tempPosition, aimAssistRadius, targetLayermask);
+				var hit = Physics2D.OverlapCircle(md.Position, aimAssistRadius, targetLayermask);
 				if(hit != null) {
 					// determine how much we'd need to move over in order to hit target
 					var linehit = Physics2D.Linecast(md.Position, hit.transform.position, targetLayermask);
@@ -213,15 +207,17 @@ public class Ball : MonoBehaviour
 							md = new MovementData(lastMd);
 
 							int startRangeRemove = lastCollisionIndex + 1;
-							flightData.RemoveRange(startRangeRemove, flightData.Count - startRangeRemove);
+							flightData.RemoveRange(startRangeRemove, flightData.Count - startRangeRemove);					
 							i = startRangeRemove;
-							lastCollisionIndex = 0;
+							lastCollisionIndex = startRangeRemove;
 							aimAssistNeeded = false;
-							continue;
 						}
 					}
 				}
 			}
+
+			var tempPosition = md.Position;
+			md.Update(Time.fixedDeltaTime);
 
 			var ballHit = Physics2D.CircleCastAll(tempPosition, ballRadius, md.ActualMovementDirection, md.ActualMoveSpeed, collidableLayermask)
 							.FirstOrDefault(h => h.collider != colliderLast);

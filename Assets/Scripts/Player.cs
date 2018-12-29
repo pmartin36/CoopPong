@@ -37,7 +37,7 @@ public class Player : MonoBehaviour
 	private float MovementInput;
 	public float MoveSpeed { get; set; }
 
-	public AimAssist AimAssist { get; set; }
+	public AimAssist AimAssist;
 
 	private static float yMaximum;
 	public MinMax MovementRange;
