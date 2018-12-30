@@ -44,13 +44,13 @@ public class JailEnemy : MonoBehaviour, IEffector {
 		if (targetedPlayer.MovementRange.Min > oldMinMax.Min) {
 			JailBar b = Instantiate(JailBarPrefab);
 			b.transform.position = new Vector3(targetedPlayer.transform.position.x, targetedPlayer.MovementRange.Min - (targetedPlayer.Width + b.transform.lossyScale.y) / 2f);
-			Destroyed += b.JailerDestroyed;
+			b.SignUpForDestroyedEvent(this);
 		}
 
 		if(targetedPlayer.MovementRange.Max < oldMinMax.Max){
 			JailBar b = Instantiate(JailBarPrefab);
 			b.transform.position = new Vector3(targetedPlayer.transform.position.x, targetedPlayer.MovementRange.Max + (targetedPlayer.Width + b.transform.lossyScale.y) / 2f);
-			Destroyed += b.JailerDestroyed;
+			b.SignUpForDestroyedEvent(this);
 		}	
 	}
 

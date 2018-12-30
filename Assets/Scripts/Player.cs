@@ -34,9 +34,10 @@ public class Player : MonoBehaviour
 	public float Energy { get; private set; }
 	public bool SlowModeActive { get; private set; }
 
-	private float MovementInput;
 	public float MaxMoveSpeed { get; set; }
-	private float LastFrameMoveSpeed;
+	private float targetMoveSpeed;
+	private float lastFrameMoveSpeed;
+	private float lastFrameAcceleration;
 
 	public AimAssist AimAssist;
 
@@ -62,7 +63,7 @@ public class Player : MonoBehaviour
 	private bool CpuReachedBasePlacement;
 
 	public float YMove {
-		get { return MovementInput * MaxMoveSpeed; }
+		get { return lastFrameMoveSpeed; }
 	}
 
 	private Player _otherPlayer;
@@ -111,7 +112,7 @@ public class Player : MonoBehaviour
 
 	private void FixedUpdate() {
 		if(PlayerControlled) {
-			MoveFromInput(MovementInput);
+			MoveFromInput(out bool overMaxSpeed);
 		}
 		else {
 			float diff = CpuOffsetPlacement - transform.position.y;
@@ -127,15 +128,34 @@ public class Player : MonoBehaviour
 		}
 	}
 
-	private void MoveFromInput(float mInput) {
-		float delta = mInput * MaxMoveSpeed * Time.fixedDeltaTime;
-		float modifiedY = Mathf.Clamp(transform.position.y + delta, MovementRange.Min, MovementRange.Max);
+	private void MoveFromInput(out bool overMaxSpeed) {
+		float targetDelta = targetMoveSpeed; 
+		overMaxSpeed = false;
+		lastFrameMoveSpeed = lastFrameMoveSpeed  + (lastFrameAcceleration * Time.fixedDeltaTime);
+		if(pipsOut) {
+			if( Mathf.Abs(lastFrameMoveSpeed) > MaxMoveSpeed ) {
+				// we're slowing down after being in non-pips out mode
+				targetDelta = Mathf.SmoothDamp(lastFrameMoveSpeed, targetDelta, ref lastFrameAcceleration, 0.3f);
+				overMaxSpeed = true;
+			}
+			else if (Mathf.Abs(targetDelta) < Mathf.Abs(lastFrameMoveSpeed)) {
+				targetDelta = Mathf.SmoothDamp(lastFrameMoveSpeed, targetDelta, ref lastFrameAcceleration, 0.1f);
+			}
+		}
+		else {
+			targetDelta *= 2.5f; // non-pips out can move at 2.5x speed
+			bool slowingDown = Mathf.Abs(targetDelta) < Mathf.Abs(lastFrameMoveSpeed);
+			targetDelta = Mathf.SmoothDamp(lastFrameMoveSpeed, targetDelta, ref lastFrameAcceleration, slowingDown ? 0.3f : 0.1f);
+		}
+
+		float modifiedY = Mathf.Clamp(transform.position.y + targetDelta * Time.fixedDeltaTime, MovementRange.Min, MovementRange.Max);
+		lastFrameMoveSpeed = (modifiedY - transform.position.y) / Time.fixedDeltaTime;
 		transform.position = new Vector3(transform.position.x, modifiedY);
 	}
 
 	public void HandleInput(float vertical, bool flip, bool slow) {
 		if(PlayerControlled) {
-			MovementInput = vertical;
+			targetMoveSpeed = vertical * MaxMoveSpeed;
 			if(flip) {
 				transform.localRotation = Quaternion.Euler(0, 0, transform.localRotation.eulerAngles.z + 180);
 				pipsOut = !pipsOut;
@@ -170,7 +190,7 @@ public class Player : MonoBehaviour
 	}
 
 	public float GetRotationModifier(Vector3 point, Vector3 incoming) {
-		return pipsOut ? 2f : 1f;
+		return pipsOut ? 2f : 0.1f;
 	}
 
 	public float GetMSDelta(Vector3 point, Vector3 incoming) {
