@@ -42,22 +42,18 @@ public class EffectButton : MonoBehaviour
 		bool active;
 		if (isBottom) {
 			y = Mathf.Clamp(player.transform.position.y - offset, -10, -9);
-			active = y <= -9.5f;
+			Pressed(-y - 9f);
 		}
 		else {
 			y = Mathf.Clamp(player.transform.position.y + offset, 9, 10);
-			active = y >= 9.5f;
+			Pressed(y - 9f);
 		}
 		transform.position = new Vector3(transform.position.x, y);
-
-		if(active) {
-			Pressed();
-		}
 	}
 
-	public void Pressed() {
+	public void Pressed(float amount) {
 		foreach(var e in Effected) {
-			e.ActedUponBy |= buttonLocation;
+			e.AddActor(this.buttonLocation, amount);
 		}
 	}
 }

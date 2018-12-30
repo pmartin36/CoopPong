@@ -1,3 +1,4 @@
 ﻿public interface IButtonEffected {
-	ButtonLocation ActedUponBy { get; set; }
+	float Amount { get; set; }
+	void AddActor(ButtonLocation location, float amount);
 }

@@ -1,24 +1,24 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 public class SpinOnPress : Spinner, IButtonEffected {
-	public ButtonLocation ActedUponBy { get; set; }
+	public float Amount { get; set; }
+	public ButtonLocation[] PositiveActors;
+	public ButtonLocation[] NegativeActors;
+
+	public void AddActor(ButtonLocation location, float amount) {
+		if(PositiveActors.Any(a => a == location)) {
+			Amount += amount;
+		}
+		else if (NegativeActors.Any(a => a == location)) {
+			Amount -= amount;
+		}
+	}
 
 	public override void LateUpdate() {
-		float spin = 0;
-		bool bottomRight = ActedUponBy.HasFlag(ButtonLocation.BottomRight);
-		bool topRight = ActedUponBy.HasFlag(ButtonLocation.TopRight);
-		bool topLeft = ActedUponBy.HasFlag(ButtonLocation.TopLeft);
-		bool bottomLeft = ActedUponBy.HasFlag(ButtonLocation.BottomLeft);
-		if( (bottomRight || topLeft) && !(topRight || bottomLeft) ) {
-			spin = -1;
-		}
-		else if (!(bottomRight || topLeft) && (topRight || bottomLeft)) {
-			spin = 1;
-		}
-
-		Spin(spin);
-		ActedUponBy = 0;
+		Spin(Amount);
+		Amount = 0;
 	}
 }

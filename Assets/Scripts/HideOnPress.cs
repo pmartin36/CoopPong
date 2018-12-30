@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 public class HideOnPress : MonoBehaviour, IButtonEffected {
@@ -9,7 +10,18 @@ public class HideOnPress : MonoBehaviour, IButtonEffected {
 	private bool Enabled = false;
 	Coroutine waitingForEnable;
 
-	public ButtonLocation ActedUponBy { get; set; }
+	public float Amount { get; set; }
+	public ButtonLocation[] PositiveActors;
+	public ButtonLocation[] NegativeActors;
+
+	public void AddActor(ButtonLocation location, float amount) {
+		if (PositiveActors.Any(a => a == location)) {
+			Amount += amount;
+		}
+		else if (NegativeActors.Any(a => a == location)) {
+			Amount -= amount;
+		}
+	}
 
 	private void SetEnabled(bool enabled) {
 		if(Enabled != enabled) {
@@ -38,8 +50,8 @@ public class HideOnPress : MonoBehaviour, IButtonEffected {
 	}
 
 	public void LateUpdate() {
-		SetEnabled(ActedUponBy != 0);
-		ActedUponBy = 0;
+		SetEnabled(Amount > 0.5f);
+		Amount = 0;
 	}
 
 	private IEnumerator WaitForEnable() {
