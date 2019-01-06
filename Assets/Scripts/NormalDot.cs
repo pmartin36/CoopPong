@@ -4,10 +4,19 @@ using UnityEngine;
 
 public class NormalDot : Dot
 {
-	public GameObject Powerup;
+	public PowerupBall Powerup;
 
-	public override void OnDestroyEffect() {
+	public override void OnDestroyEffect(GameObject collider) {
 		// drop powerup
+		Powerup.transform.parent = null;
+		Powerup.gameObject.SetActive(true);
 
+		if(collider.tag == "Ball") {
+			var md = collider.GetComponent<BaseBall>()?.MovementData;
+			Powerup.Init(md);
+		}
+		else {
+			Powerup.Init(new MovementData(transform.position));
+		}
 	}
 }

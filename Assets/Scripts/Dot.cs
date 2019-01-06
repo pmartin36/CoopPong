@@ -25,7 +25,12 @@ public class Dot : MonoBehaviour
         
     }
 
-	public virtual void OnDestroyEffect() {
+	public void TryDestroy(GameObject collision) {
+		OnDestroyEffect(collision);
+		this.gameObject.Destroy();
+	}
+
+	public virtual void OnDestroyEffect(GameObject collision) {
 		switch (DotType) {		
 			case DotType.Required:
 				// remove from required
@@ -41,7 +46,6 @@ public class Dot : MonoBehaviour
 	}
 
 	private void OnTriggerEnter2D(Collider2D collision) {
-		OnDestroyEffect();
-		this.gameObject.Destroy();	
+		TryDestroy(collision.gameObject);
 	}
 }

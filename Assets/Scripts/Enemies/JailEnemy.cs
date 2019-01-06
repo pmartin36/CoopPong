@@ -2,9 +2,7 @@
 using System.Collections;
 using System;
 
-public class JailEnemy : MonoBehaviour, IEffector {
-
-	public bool Spawning { get; set; }
+public class JailEnemy : BaseEnemy, IEffector {
 
 	public StatusEffect Effect { get { return StatusEffect.Jailed; } }
 
@@ -52,12 +50,6 @@ public class JailEnemy : MonoBehaviour, IEffector {
 			b.transform.position = new Vector3(targetedPlayer.transform.position.x, targetedPlayer.MovementRange.Max + (targetedPlayer.Width + b.transform.lossyScale.y) / 2f);
 			b.SignUpForDestroyedEvent(this);
 		}	
-	}
-
-	public void OnTriggerEnter2D(Collider2D collision) {
-		if (!Spawning) {
-			Destroy(this.gameObject);
-		}
 	}
 
 	public void OnDestroy() {

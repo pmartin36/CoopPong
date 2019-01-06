@@ -39,7 +39,6 @@ public class EffectButton : MonoBehaviour
 	private void Update() {
 		float offset = player.Width / 2f;
 		float y;
-		bool active;
 		if (isBottom) {
 			y = Mathf.Clamp(player.transform.position.y - offset, -10, -9);
 			Pressed(-y - 9f);

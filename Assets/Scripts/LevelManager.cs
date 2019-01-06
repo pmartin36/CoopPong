@@ -7,6 +7,8 @@ public class LevelManager : ContextManager
 	public Player LeftPlayer;
 	public Player RightPlayer;
 
+	public Ball[] Balls;
+
 	public SpawnExport SpawnDataAsset;
 
 	// public Spawner Spawner;
@@ -17,6 +19,7 @@ public class LevelManager : ContextManager
 		base.Start();
 		// SpawnExport spawnData = Instantiate(SpawnDataAsset);
 		// Spawner = new Spawner(spawnData.SpawnInfo);
+		Balls = FindObjectsOfType<Ball>();
 	}
 
 	public void Update() {
@@ -25,11 +28,11 @@ public class LevelManager : ContextManager
 
 	public override void HandleInput(InputPackage p) {
 		if(LeftPlayer != null) {
-			LeftPlayer.HandleInput(p.LeftPlayerVertical, p.LeftPlayerFlip, p.LeftPlayerSlow);
+			LeftPlayer.HandleInput(p.LeftPlayerVertical, p.LeftPlayerFlip, p.LeftPlayerButton2);
 		}
 
 		if(RightPlayer != null) {
-			RightPlayer.HandleInput(p.RightPlayerVertical, p.RightPlayerFlip, p.RightPlayerSlow);
+			RightPlayer.HandleInput(p.RightPlayerVertical, p.RightPlayerFlip, p.RightPlayerButton2);
 		}
 	}
 
@@ -57,6 +60,6 @@ public class LevelManager : ContextManager
 	}
 
 	public void LateUpdate() {
-		SetSlowMode(LeftPlayer.SlowModeActive || RightPlayer.SlowModeActive);
+		
 	}
 }

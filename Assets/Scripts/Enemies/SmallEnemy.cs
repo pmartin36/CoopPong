@@ -2,10 +2,7 @@
 using System.Collections;
 using UnityEngine;
 
-public class SmallEnemy : MonoBehaviour, IEffector {
-
-	public bool Spawning { get; set; }
-
+public class SmallEnemy : BaseEnemy, IEffector {
 	public StatusEffect Effect { get => StatusEffect.Shrunk; }
 
 	public event EventHandler Destroyed;
@@ -32,20 +29,10 @@ public class SmallEnemy : MonoBehaviour, IEffector {
 		}
 	}
 
-	public void Update() {
-		
-	}
-
 	private void SpawnComplete() {
 		Spawning = false;
 		gameObject.layer = LayerMask.NameToLayer("Target");
 		targetedPlayer.AddStatusEffect(this);
-	}
-
-	public void OnTriggerEnter2D(Collider2D collision) {
-		if (!Spawning) {
-			Destroy(this.gameObject);
-		}
 	}
 
 	public void OnDestroy() {

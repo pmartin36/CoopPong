@@ -21,9 +21,16 @@ public class MovementData  {
 	}
 	public float ActualMoveSpeed { get; private set; }
 
-	public MovementData() {
+	public MovementData() { }
 
-	}
+	public MovementData(Vector3 p) : this( 
+			position: p,
+			movementDirection: Utils.AngleToVector(Random.value * 360),
+			moveSpeed: BaseBall.BaseSpeed,
+			rotation: 0,
+			curve: 0,
+			curveDirection: Vector2.zero,
+			isCurving: false) { } 
 
 	public MovementData(MovementData d) : this(
 		new Vector3(d.Position.x, d.Position.y),

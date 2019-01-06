@@ -10,6 +10,9 @@ TagManager:
   - PlayerCapBottom
   - LaserShot
   - SpinArm
+  - Dot
+  - Enemy
+  - Ball
   layers:
   - Default
   - TransparentFX

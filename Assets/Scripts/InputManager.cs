@@ -4,11 +4,11 @@ using UnityEngine;
 
 public class InputPackage {
 	public bool LeftPlayerFlip { get; set; }
-	public bool LeftPlayerSlow { get; set; }
+	public bool LeftPlayerButton2 { get; set; }
 	public float LeftPlayerVertical { get; set; }
 	
-	public bool RightPlayerFlip{ get; set; }
-	public bool RightPlayerSlow { get; set; }
+	public bool RightPlayerFlip { get; set; }
+	public bool RightPlayerButton2 { get; set; }
 	public float RightPlayerVertical { get; set; }
 }
 
@@ -17,12 +17,12 @@ public class InputManager : MonoBehaviour
     void Update()
     {
         InputPackage p = new InputPackage();
-		p.LeftPlayerFlip = Input.GetButtonDown("LeftFlip");
-		p.LeftPlayerSlow = Input.GetButton("LeftSlow");
+		p.LeftPlayerFlip = Input.GetButtonDown("LeftButton1");
+		p.LeftPlayerButton2 = Input.GetButton("LeftButton2");
 		p.LeftPlayerVertical = Input.GetAxis("LeftVertical");
 
-		p.RightPlayerFlip = Input.GetButtonDown("RightFlip");
-		p.RightPlayerSlow = Input.GetButton("RightSlow");
+		p.RightPlayerFlip = Input.GetButtonDown("RightButton1");
+		p.RightPlayerButton2 = Input.GetButton("RightButton2");
 		p.RightPlayerVertical = Input.GetAxis("RightVertical");
 
 		GameManager.Instance.HandleInput(p);

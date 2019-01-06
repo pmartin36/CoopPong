@@ -29,10 +29,14 @@ public class Player : MonoBehaviour
 		}
 	}
 
-	public bool SoulSwapped { get; set; } = false;
-
 	public float Energy { get; private set; }
-	public bool SlowModeActive { get; private set; }
+	public bool IsSlowed { get; private set; }
+	public bool IsControlling { get; private set; }
+
+	public LaserAttachment Laser;
+	public bool LaserActive {
+		get { return Laser.isActiveAndEnabled; }
+	}
 
 	public float MaxMoveSpeed { get; set; }
 	private float targetMoveSpeed;
@@ -48,6 +52,8 @@ public class Player : MonoBehaviour
 	public StatusEffect StatusEffects;
 
 	private bool pipsOut;
+	private bool buttonDown;
+	private float verticalInput;
 	private float timeSinceLastEnergyUse;
 	
 	private CapsuleCollider2D capsuleCollider;
@@ -62,8 +68,18 @@ public class Player : MonoBehaviour
 	private float CpuOffsetPlacement;
 	private bool CpuReachedBasePlacement;
 
+	[SerializeField]
+	private List<GameObject> EffectedGameObjects;
+	private List<IButtonEffected> Effected;
+
 	public float YMove {
 		get { return lastFrameMoveSpeed; }
+	}
+
+	private float MovespeedSlow {
+		get {
+			return IsSlowed ? 0.5f : 1f;
+		}
 	}
 
 	private Player _otherPlayer;
@@ -77,13 +93,24 @@ public class Player : MonoBehaviour
 		}
 	}
 
-    void Start()
+	private void OnValidate() {
+		for (int i = 0; i < EffectedGameObjects.Count; i++) {
+			if (EffectedGameObjects[i] != null && EffectedGameObjects[i].GetComponent<IButtonEffected>() == null) {
+				EffectedGameObjects[i] = null;
+			}
+		}
+	}
+
+	void Start()
     {
         ResetMoveSpeed();
 		Side = transform.position.x > 0 ? PlayerSide.Right : PlayerSide.Left;
 		Energy = 1;
 
 		spriteRenderers = GetComponentsInChildren<SpriteRenderer>();
+
+		Laser = GetComponentInChildren<LaserAttachment>(true);
+		Laser.Init(this);
 
 		foreach(Transform t in transform) {
 			if(t.tag == "PlayerCapTop") {
@@ -100,14 +127,33 @@ public class Player : MonoBehaviour
 		capsuleCollider = GetComponent<CapsuleCollider2D>();
 		SetBodyWidth(1.15f, false);
 
-		AimAssist = AimAssist.Light;
+		Effected = EffectedGameObjects.Select(g => g?.GetComponent<IButtonEffected>()).ToList();
+		pipsOut = true;
+	}
+
+	private void CalculateColor() {
+		Color baseColor = IsSlowed ? new Color(0.67f, 0.84f, 0.87f) : Color.white;
+		foreach (SpriteRenderer s in spriteRenderers) {
+			if(!IsControlling) {
+				s.color = baseColor;
+			}
+			else {
+				if (verticalInput > 0 && s.transform == topCap) {
+					s.color = baseColor * Color.red;
+				}
+				else if (verticalInput < 0 && s.transform == bottomCap) {
+					s.color = baseColor * Color.red;
+				}
+				else {
+					s.color = baseColor * Color.yellow;
+				}
+			}
+		}		
 	}
 
 	void Update()
     {
-        if(Energy < 1 && Time.time - timeSinceLastEnergyUse > 1f) {
-			Energy += 0.5f * Time.deltaTime; 
-		}
+        CalculateColor();
     }
 
 	private void FixedUpdate() {
@@ -117,7 +163,7 @@ public class Player : MonoBehaviour
 		else {
 			float diff = CpuOffsetPlacement - transform.position.y;
 			float diffAbs = Mathf.Abs(diff);
-			float distance = Mathf.Min(diffAbs, MaxMoveSpeed * Time.fixedDeltaTime);
+			float distance = Mathf.Min(diffAbs, (MaxMoveSpeed * MovespeedSlow) * Time.fixedDeltaTime);
 			if(!CpuReachedBasePlacement && diffAbs < 0.05f) {
 				CpuReachedBasePlacement = true;
 			}
@@ -129,47 +175,82 @@ public class Player : MonoBehaviour
 	}
 
 	private void MoveFromInput(out bool overMaxSpeed) {
-		float targetDelta = targetMoveSpeed; 
 		overMaxSpeed = false;
-		lastFrameMoveSpeed = lastFrameMoveSpeed  + (lastFrameAcceleration * Time.fixedDeltaTime);
-		if(pipsOut) {
-			if( Mathf.Abs(lastFrameMoveSpeed) > MaxMoveSpeed ) {
-				// we're slowing down after being in non-pips out mode
-				targetDelta = Mathf.SmoothDamp(lastFrameMoveSpeed, targetDelta, ref lastFrameAcceleration, 0.3f);
-				overMaxSpeed = true;
-			}
-			else if (Mathf.Abs(targetDelta) < Mathf.Abs(lastFrameMoveSpeed)) {
-				targetDelta = Mathf.SmoothDamp(lastFrameMoveSpeed, targetDelta, ref lastFrameAcceleration, 0.1f);
-			}
+		if (buttonDown) {
+			lastFrameMoveSpeed = 0;
+			lastFrameAcceleration = 0;
 		}
-		else {
-			targetDelta *= 2.5f; // non-pips out can move at 2.5x speed
-			bool slowingDown = Mathf.Abs(targetDelta) < Mathf.Abs(lastFrameMoveSpeed);
-			targetDelta = Mathf.SmoothDamp(lastFrameMoveSpeed, targetDelta, ref lastFrameAcceleration, slowingDown ? 0.3f : 0.1f);
-		}
-
-		float modifiedY = Mathf.Clamp(transform.position.y + targetDelta * Time.fixedDeltaTime, MovementRange.Min, MovementRange.Max);
-		lastFrameMoveSpeed = (modifiedY - transform.position.y) / Time.fixedDeltaTime;
-		transform.position = new Vector3(transform.position.x, modifiedY);
-	}
-
-	public void HandleInput(float vertical, bool flip, bool slow) {
-		if(PlayerControlled) {
-			targetMoveSpeed = vertical * MaxMoveSpeed;
-			if(flip) {
-				transform.localRotation = Quaternion.Euler(0, 0, transform.localRotation.eulerAngles.z + 180);
-				pipsOut = !pipsOut;
-			}
-	
-			if (slow && (Energy > 0.99f || SlowModeActive)) {
-				SlowModeActive = true;
-				Energy -= 0.75f * Time.deltaTime;
-				timeSinceLastEnergyUse = Time.time;
+		else{
+			float targetDelta = targetMoveSpeed; 
+			lastFrameMoveSpeed = lastFrameMoveSpeed  + (lastFrameAcceleration * Time.fixedDeltaTime);
+			if(pipsOut) {
+				if( Mathf.Abs(lastFrameMoveSpeed) > MaxMoveSpeed ) {
+					// we're slowing down after being in non-pips out mode
+					targetDelta = Mathf.SmoothDamp(lastFrameMoveSpeed, targetDelta, ref lastFrameAcceleration, 0.3f);
+					overMaxSpeed = true;
+				}
+				else if (Mathf.Abs(targetDelta) < Mathf.Abs(lastFrameMoveSpeed)) {
+					targetDelta = Mathf.SmoothDamp(lastFrameMoveSpeed, targetDelta, ref lastFrameAcceleration, 0.1f);
+				}
 			}
 			else {
-				SlowModeActive = false;
+				targetDelta *= 2.5f; // non-pips out can move at 2.5x speed
+				bool slowingDown = Mathf.Abs(targetDelta) < Mathf.Abs(lastFrameMoveSpeed);
+				targetDelta = Mathf.SmoothDamp(lastFrameMoveSpeed, targetDelta, ref lastFrameAcceleration, slowingDown ? 0.3f : 0.2f);
+			}
+
+			float modifiedY = Mathf.Clamp(transform.position.y + targetDelta * Time.fixedDeltaTime, MovementRange.Min, MovementRange.Max);
+			lastFrameMoveSpeed = (modifiedY - transform.position.y) / Time.fixedDeltaTime;
+			transform.position = new Vector3(transform.position.x, modifiedY);
+		}
+	}
+
+	public void HandleInput(float vertical, bool button1, bool button2) {
+		verticalInput = vertical;
+		if(PlayerControlled) {
+			buttonDown = button2;
+			if (buttonDown) {
+				IsControlling = true;
+				var vertAbs = Mathf.Abs(vertical);
+				foreach (IButtonEffected e in Effected) {
+					if (Side == PlayerSide.Right) {
+						if (vertical > 0.5f) {
+							e.AddActor(ButtonLocation.TopRight, vertAbs);
+						}
+						else if (vertical < -0.5f) {
+							e.AddActor(ButtonLocation.BottomRight, vertAbs);
+						}
+					}
+					else {
+						if (vertical > 0.5f) {
+							e.AddActor(ButtonLocation.TopLeft, vertAbs);
+						}
+						else if (vertical < -0.5f) {
+							e.AddActor(ButtonLocation.BottomLeft, vertAbs);
+						}
+					}
+				}
+			}
+			else {
+				IsControlling = false;
+				targetMoveSpeed = vertical * MaxMoveSpeed * MovespeedSlow;
+				if (button1) {
+					if(LaserActive) {
+						Laser.TryFire();
+					}
+					else {
+						SetPipsOut(!pipsOut);			
+					}
+				}
 			}
 		} 
+	}
+
+	private void SetPipsOut(bool pips) {
+		pipsOut = pips;
+		foreach (SpriteRenderer s in spriteRenderers) {
+			s.flipX = pips;
+		}
 	}
 
 	public void ResetMoveSpeed() {
@@ -190,11 +271,11 @@ public class Player : MonoBehaviour
 	}
 
 	public float GetRotationModifier(Vector3 point, Vector3 incoming) {
-		return pipsOut ? 2f : 0.1f;
+		return (!pipsOut || LaserActive)  ? 0.1f : 2f;
 	}
 
 	public float GetMSDelta(Vector3 point, Vector3 incoming) {
-		return pipsOut ? -0.1f : 0.25f;
+		return (pipsOut && !LaserActive) ? -0.1f : 0.25f;
 	}
 
 	public void GoToLocation(Vector3 p) {
@@ -213,8 +294,9 @@ public class Player : MonoBehaviour
 
 		}
 		else {		
-			Width = (bodyWidth + 0.25f) * 2;
-			yMaximum = Camera.main.orthographicSize - (Width / 2) - 0.25f;
+			//0.5425 = height of end caps
+			Width = (bodyWidth + 0.5425f / 2f) * 2;
+			yMaximum = Camera.main.orthographicSize - (Width / 2) - 0.5425f / 2f;
 			MovementRange = new MinMax(-yMaximum, yMaximum);
 
 			capsuleCollider.size = new Vector2(capsuleCollider.size.x, Width);
@@ -222,6 +304,27 @@ public class Player : MonoBehaviour
 			topCap.localPosition = new Vector2(0, bodyWidth);
 			bottomCap.localPosition = new Vector2(0, -bodyWidth);
 		}
+	}
+
+	public void AddPowerup(Powerup p) {
+		switch (p) {
+			case Powerup.BigBall:
+				foreach(Ball b in GameManager.Instance.LevelManager.Balls) {
+					b.ApplyBigBall();
+				}
+				break;
+			case Powerup.Laser:
+				Laser.gameObject.SetActive(true);
+				SetPipsOut(true);
+				break;
+			case Powerup.Remote:
+				break;
+		}
+	}
+
+	public void ApplyMoveSlow() {
+		StopCoroutine("Slow");
+		StartCoroutine("Slow");
 	}
 
 	public void AddStatusEffect(IEffector effector) {
@@ -264,6 +367,13 @@ public class Player : MonoBehaviour
 	}
 
 	public void Hit() {
+		IsSlowed = false;
 		this.gameObject.SetActive(false);
+	}
+
+	private IEnumerator Slow() {
+		IsSlowed = true;
+		yield return new WaitForSeconds(4f);
+		IsSlowed = false;
 	}
 }

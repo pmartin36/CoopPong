@@ -2,9 +2,7 @@
 using System.Collections;
 using System;
 
-public class LaserEnemy : MonoBehaviour {
-	public bool Spawning { get; set; }
-
+public class LaserEnemy : BaseEnemy {
 	[SerializeField]
 	private LaserShot LaserShotPrefab;
 
@@ -20,19 +18,9 @@ public class LaserEnemy : MonoBehaviour {
 		SpawnComplete();
 	}
 
-	private void Update() {
-
-	}
-
 	private void SpawnComplete() {
 		Spawning = false;
 		StartCoroutine(Fire());
-	}
-
-	public void OnTriggerEnter2D(Collider2D collision) {
-		if(!Spawning) {
-			Destroy(this.gameObject);
-		}
 	}
 
 	public void OnDestroy() {
@@ -44,11 +32,11 @@ public class LaserEnemy : MonoBehaviour {
 		LaserShot ls = Instantiate(LaserShotPrefab, null);
 		if(left) {
 			ls.transform.position = transform.position + Vector3.left;
-			ls.Init( Vector3.left * 50f );
+			ls.Init( Vector3.left * 50f, this.gameObject );
 		} 
 		else {
 			ls.transform.position = transform.position + Vector3.right;
-			ls.Init(Vector3.right * 50f);
+			ls.Init(Vector3.right * 50f, this.gameObject);
 		}
 	}
 

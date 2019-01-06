@@ -10,7 +10,7 @@ public class EnemyDot : Dot
 		Enemies = GetComponentsInChildren<Transform>(true);
 	}
 
-	public override void OnDestroyEffect() {
+	public override void OnDestroyEffect(GameObject ball) {
 		// Spawn Enemy
 		foreach(Transform enemy in Enemies) {
 			if(enemy != this.gameObject) {
