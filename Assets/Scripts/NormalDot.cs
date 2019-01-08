@@ -11,7 +11,7 @@ public class NormalDot : Dot
 		Powerup.transform.parent = null;
 		Powerup.gameObject.SetActive(true);
 
-		if(collider.tag == "Ball") {
+		if(collider.CompareTag("Ball")) {
 			var md = collider.GetComponent<BaseBall>()?.MovementData;
 			Powerup.Init(md);
 		}

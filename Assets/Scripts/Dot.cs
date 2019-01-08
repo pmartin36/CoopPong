@@ -46,6 +46,8 @@ public class Dot : MonoBehaviour
 	}
 
 	private void OnTriggerEnter2D(Collider2D collision) {
-		TryDestroy(collision.gameObject);
+		if(collision.CompareTag("Ball")) {
+			TryDestroy(collision.gameObject);
+		}
 	}
 }

@@ -20,7 +20,7 @@ public class Spinner : MonoBehaviour, IMoving {
 		Arms = new List<Transform>();
 		for (int i = 0; i < transform.childCount; i++) {
 			var child = transform.GetChild(i);
-			if (child.tag == "SpinArm") {
+			if (child.CompareTag("SpinArm")) {
 				Arms.Add(child);
 			}
 			else {

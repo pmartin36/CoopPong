@@ -38,6 +38,11 @@ public class Player : MonoBehaviour
 		get { return Laser.isActiveAndEnabled; }
 	}
 
+	public RemoteControlAttachment RemoteControl;
+	public bool RemoteControlActive {
+		get { return RemoteControl.isActiveAndEnabled; }
+	}
+
 	public float MaxMoveSpeed { get; set; }
 	private float targetMoveSpeed;
 	private float lastFrameMoveSpeed;
@@ -112,14 +117,16 @@ public class Player : MonoBehaviour
 		Laser = GetComponentInChildren<LaserAttachment>(true);
 		Laser.Init(this);
 
+		RemoteControl = GetComponentInChildren<RemoteControlAttachment>(true);
+
 		foreach(Transform t in transform) {
-			if(t.tag == "PlayerCapTop") {
+			if(t.CompareTag("PlayerCapTop")) {
 				topCap = t;
 			}
-			else if(t.tag == "PlayerBody") {
+			else if(t.CompareTag("PlayerBody")) {
 				body = t;
 			}
-			else if(t.tag == "PlayerCapBottom") {
+			else if(t.CompareTag("PlayerCapBottom")) {
 				bottomCap = t;
 			}	
 		}
@@ -138,10 +145,10 @@ public class Player : MonoBehaviour
 				s.color = baseColor;
 			}
 			else {
-				if (verticalInput > 0 && s.transform == topCap) {
+				if (verticalInput > 0 && s.transform == topCap && !RemoteControlActive) {
 					s.color = baseColor * Color.red;
 				}
-				else if (verticalInput < 0 && s.transform == bottomCap) {
+				else if (verticalInput < 0 && s.transform == bottomCap && !RemoteControlActive) {
 					s.color = baseColor * Color.red;
 				}
 				else {
@@ -211,22 +218,27 @@ public class Player : MonoBehaviour
 			buttonDown = button2;
 			if (buttonDown) {
 				IsControlling = true;
-				var vertAbs = Mathf.Abs(vertical);
-				foreach (IButtonEffected e in Effected) {
-					if (Side == PlayerSide.Right) {
-						if (vertical > 0.5f) {
-							e.AddActor(ButtonLocation.TopRight, vertAbs);
+				if(RemoteControlActive) {
+					RemoteControl.HandleInput(vertical);
+				}
+				else {
+					var vertAbs = Mathf.Abs(vertical);
+					foreach (IButtonEffected e in Effected) {
+						if (Side == PlayerSide.Right) {
+							if (vertical > 0.5f) {
+								e.AddActor(ButtonLocation.TopRight, vertAbs);
+							}
+							else if (vertical < -0.5f) {
+								e.AddActor(ButtonLocation.BottomRight, vertAbs);
+							}
 						}
-						else if (vertical < -0.5f) {
-							e.AddActor(ButtonLocation.BottomRight, vertAbs);
-						}
-					}
-					else {
-						if (vertical > 0.5f) {
-							e.AddActor(ButtonLocation.TopLeft, vertAbs);
-						}
-						else if (vertical < -0.5f) {
-							e.AddActor(ButtonLocation.BottomLeft, vertAbs);
+						else {
+							if (vertical > 0.5f) {
+								e.AddActor(ButtonLocation.TopLeft, vertAbs);
+							}
+							else if (vertical < -0.5f) {
+								e.AddActor(ButtonLocation.BottomLeft, vertAbs);
+							}
 						}
 					}
 				}
@@ -257,7 +269,11 @@ public class Player : MonoBehaviour
 		MaxMoveSpeed = BaseSpeed;
 	}
 
-	public Vector3 GetBallTrajectory(Vector3 point, Vector3 incoming) {
+	public Vector3 GetBallTrajectory(Ball b, Vector3 point, Vector3 incoming) {
+		// take this opportunity to add ball to remote controller
+		RemoteControl.ControlledBall = b;
+
+		// calculate new trajectory
 		float normalizedDistFromCenter = 2 * (point.y - transform.position.y) / Width; // -1 to 1
 		
 		Vector3 start = Side == PlayerSide.Right ? Vector3.left : Vector3.right;
@@ -278,9 +294,9 @@ public class Player : MonoBehaviour
 		return (pipsOut && !LaserActive) ? -0.1f : 0.25f;
 	}
 
-	public void GoToLocation(Vector3 p) {
+	public void GoToLocation(float py) {
 		CpuReachedBasePlacement = false;
-		CpuBasePlacement = p.y;
+		CpuBasePlacement = py;
 
 		float range = Width * 0.475f;
 		CpuOffsetPlacement = CpuBasePlacement + UnityEngine.Random.Range(-range, range );
@@ -314,10 +330,17 @@ public class Player : MonoBehaviour
 				}
 				break;
 			case Powerup.Laser:
+				if(RemoteControlActive) {
+					RemoteControl.gameObject.SetActive(false);
+				}
 				Laser.gameObject.SetActive(true);
 				SetPipsOut(true);
 				break;
 			case Powerup.Remote:
+				if (LaserActive) {
+					Laser.gameObject.SetActive(false);
+				}
+				RemoteControl.gameObject.SetActive(true);
 				break;
 		}
 	}

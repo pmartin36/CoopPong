@@ -8,6 +8,7 @@ public class LevelManager : ContextManager
 	public Player RightPlayer;
 
 	public Ball[] Balls;
+	public readonly List<Player> CpuControlledPlayers = new List<Player>();
 
 	public SpawnExport SpawnDataAsset;
 
@@ -20,6 +21,13 @@ public class LevelManager : ContextManager
 		// SpawnExport spawnData = Instantiate(SpawnDataAsset);
 		// Spawner = new Spawner(spawnData.SpawnInfo);
 		Balls = FindObjectsOfType<Ball>();
+
+		if(!LeftPlayer.PlayerControlled) {
+			CpuControlledPlayers.Add(LeftPlayer);
+		}
+		if(!RightPlayer.PlayerControlled) {
+			CpuControlledPlayers.Add(RightPlayer);
+		}
 	}
 
 	public void Update() {

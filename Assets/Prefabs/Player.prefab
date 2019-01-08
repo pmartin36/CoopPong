@@ -1,5 +1,97 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
+--- !u!1 &1691657235133801052
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 5027819476389315469}
+  - component: {fileID: 329540063435050109}
+  - component: {fileID: 6250645814277180124}
+  m_Layer: 0
+  m_Name: remote_attachment
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 0
+--- !u!4 &5027819476389315469
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1691657235133801052}
+  m_LocalRotation: {x: -0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 1.825, z: 0.012207031}
+  m_LocalScale: {x: 1.666667, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 8932928751224158284}
+  m_RootOrder: 1
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!212 &329540063435050109
+SpriteRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1691657235133801052}
+  m_Enabled: 1
+  m_CastShadows: 0
+  m_ReceiveShadows: 0
+  m_DynamicOccludee: 1
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 10754, guid: 0000000000000000f000000000000000, type: 0}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 0
+  m_SelectedEditorRenderState: 0
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_SortingLayerID: -724815069
+  m_SortingLayer: 2
+  m_SortingOrder: 1
+  m_Sprite: {fileID: 21300000, guid: ede5a1684c5e7ea4291e4b27298b1124, type: 3}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_FlipX: 0
+  m_FlipY: 0
+  m_DrawMode: 0
+  m_Size: {x: 1, y: 1}
+  m_AdaptiveModeThreshold: 0.5
+  m_SpriteTileMode: 0
+  m_WasSpriteAssigned: 1
+  m_MaskInteraction: 0
+  m_SpriteSortPoint: 0
+--- !u!114 &6250645814277180124
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1691657235133801052}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 27e1e209dab89c444ab9492c43876b78, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &3468771567394369880
 GameObject:
   m_ObjectHideFlags: 0
@@ -29,7 +121,7 @@ Transform:
   m_LocalScale: {x: 0.775, y: -0.5425, z: 1}
   m_Children: []
   m_Father: {fileID: 8932928751224158284}
-  m_RootOrder: 3
+  m_RootOrder: 4
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!212 &3560013551721598195
 SpriteRenderer:
@@ -108,7 +200,7 @@ Transform:
   m_LocalScale: {x: 0.775, y: 1.15, z: 1}
   m_Children: []
   m_Father: {fileID: 8932928751224158284}
-  m_RootOrder: 2
+  m_RootOrder: 3
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!212 &8892046117406279261
 SpriteRenderer:
@@ -282,7 +374,7 @@ Transform:
   m_LocalScale: {x: 0.775, y: 0.5425, z: 1}
   m_Children: []
   m_Father: {fileID: 8932928751224158284}
-  m_RootOrder: 1
+  m_RootOrder: 2
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!212 &5655968620817032196
 SpriteRenderer:
@@ -362,6 +454,7 @@ Transform:
   m_LocalScale: {x: -0.6, y: 1, z: 1}
   m_Children:
   - {fileID: 1566621937558779759}
+  - {fileID: 5027819476389315469}
   - {fileID: 9121618641344453184}
   - {fileID: 1902802137130665690}
   - {fileID: 5865376550886736631}
@@ -382,6 +475,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   BaseSpeed: 7
   Laser: {fileID: 0}
+  RemoteControl: {fileID: 0}
   AimAssist: 2
   StatusEffects: 0
   PlayerControlled: 1

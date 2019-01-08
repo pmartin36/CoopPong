@@ -17,6 +17,13 @@ public class Ball : BaseBall
 	private AimAssist AimAssist;
 	private bool aimAssistNeeded = true;
 
+	public bool RemoteControlled { get; set; }
+	public List<Player> CpuControlledPlayers {
+		get {
+			return GameManager.Instance.LevelManager.CpuControlledPlayers;
+		}
+	}
+
 	protected override void SetBallRadius(float radius) {
 		base.SetBallRadius(radius);
 		if(MovementData != null) {
@@ -35,7 +42,13 @@ public class Ball : BaseBall
     // Update is called once per frame
     public override void FixedUpdate()
     {
-		if (projectedFlight != null && projectedFlight.Count > projectedFlightIndex - 1) {
+		if (RemoteControlled) {
+			base.FixedUpdate();
+			foreach(Player p in CpuControlledPlayers) {
+				p.GoToLocation(transform.position.y);
+			}
+		}
+		else if (projectedFlight != null && projectedFlight.Count > projectedFlightIndex - 1) {
 			lastMovement = projectedFlight[projectedFlightIndex];
 			Vector3 lastMoveDirection = lastMovement.ActualMovementDirection;
 
@@ -78,8 +91,8 @@ public class Ball : BaseBall
 		Vector3 normal = hitBetweenLastMove.normal;
 		float dot = Vector2.Dot(lastMoveDirection, normal);
 
-		if (collider.tag == "Player") {
-			HandlePlayerCollision(dot, normal, collider, lastMoveDirection);
+		if (collider.CompareTag("Player")) {
+			HandlePlayerCollision(dot, normal, hitBetweenLastMove, lastMoveDirection);
 		}
 		else if (expectedCollisionIndices.Count < 1 || expectedCollisionIndices[0] != projectedFlightIndex) {
 			// if there is an unexpected collision, recalculate trajectory
@@ -109,14 +122,14 @@ public class Ball : BaseBall
 		lastUpdateCollider = collider;
 	}
 
-	protected virtual void HandlePlayerCollision(float dot, Vector2 normal, Collider2D collider, Vector3 lastMoveDirection) {
+	protected override void HandlePlayerCollision(float dot, Vector2 normal, RaycastHit2D hit, Vector3 lastMoveDirection) {
 		if (dot < 0 && Mathf.Abs(normal.x) > 0.1f) {
-			var player = collider.GetComponentInParent<Player>();
-			Vector3 point = hitBetweenLastMove.point;
-			MovementData.MovementDirection = player.GetBallTrajectory(point, lastMoveDirection);
+			var player = hit.collider.GetComponentInParent<Player>();
+			Vector3 point = hit.point;
+			MovementData.MovementDirection = player.GetBallTrajectory(this, point, lastMoveDirection);
 
 			// Debug.Log(hitBetweenLastMove.centroid);
-			MovementData.Position = hitBetweenLastMove.centroid;
+			MovementData.Position = hit.centroid;
 			MovementData.Rotation += player.YMove * 6 * MovementData.MoveSpeed * -Mathf.Sign(MovementData.MovementDirection.x) * player.GetRotationModifier(point, lastMoveDirection);
 
 			MovementData.MoveSpeed += player.GetMSDelta(point, lastMoveDirection);
@@ -124,7 +137,7 @@ public class Ball : BaseBall
 			aimAssistNeeded = AimAssist != AimAssist.None;
 
 			MovementData.CalculateCurve();
-			projectedFlight = GetFlightPath(collider, AimAssist);
+			projectedFlight = GetFlightPath(hit.collider, AimAssist);
 			if (projectedFlight[0].MovementDirection != MovementData.MovementDirection) {
 				MovementData = projectedFlight[0];
 			}
@@ -154,6 +167,7 @@ public class Ball : BaseBall
 		// _movementData.MovementDirection = Vector3.right;
 		// _movementData.MoveSpeed = BaseSpeed * 5f;
 		
+		RemoteControlled = false;
 		transform.position = MovementData.Position;
 		projectedFlight = GetFlightPath(null, AimAssist.None);
 	}
@@ -257,11 +271,11 @@ public class Ball : BaseBall
 				//Vector3 poi = flightData.FindLast(p => Mathf.Abs(p.Position.x) - 15.9f < 0.1f).Position;
 				Vector3 poi = flightData.Where(p => Mathf.Sign(p.Position.x * lastPositionOfFlight.x) > 0)
 										.OrderBy(p => Mathf.Abs(Mathf.Abs(p.Position.x) - 15.9f)).First().Position; // fix this double abs?
-				targetedPlayer.GoToLocation(poi);
+				targetedPlayer.GoToLocation(poi.y);
 			}
 			if(!targetedPlayer.OtherPlayer.PlayerControlled) {
 				Vector3 poi = new Vector3(targetedPlayer.OtherPlayer.transform.position.x, Random.Range(-1f, 1f));
-				targetedPlayer.OtherPlayer.GoToLocation(poi);
+				targetedPlayer.OtherPlayer.GoToLocation(poi.y);
 			}
 		}
 
@@ -277,8 +291,13 @@ public class Ball : BaseBall
 		StartCoroutine(ChangeBallSize(size, 1f, new WaitForSeconds(0.1f)));
 	}
 
+	public void RemoteControl(float v) {
+		RemoteControlled = true;
+		MovementData.AddCurve(v * 30);
+	}
+
 	public void OnTriggerEnter2D(Collider2D collision) {
-		if (collision.tag == "ScoreZone") {
+		if (collision.CompareTag("ScoreZone")) {
 			GenerateRandomPositionAndDirection();
 			GameManager.Instance.LevelManager.PlayerLifeLost();
 		}

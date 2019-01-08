@@ -64,14 +64,31 @@ public class MovementData  {
 		ActualMoveSpeed = delta.magnitude;
 	}
 
-	public void CalculateCurve() {
+	public void AddCurve(float add) {
+		float modifier;
+		if (Curve * add < 0) {
+			// trying to return to zero spin
+			Rotation = Mathf.Clamp(Rotation + add * 2, -600, 600);
+			Curve = Rotation / 250f;
+		}
+		else {
+			// modifier = 10 / (Mathf.Sqrt(Mathf.Abs(Rotation)) + 1);
+			Rotation = Mathf.Clamp(Rotation + add, -600, 600);
+			Curve = Rotation / 250f;
+		}
+		CalculateCurve(false);
+	}
+
+	public void CalculateCurve(bool resetCurve = true) {
 		Vector3 cd = MovementDirection.Rotate(90);
 		if (Mathf.Sign(cd.x * Rotation) * Mathf.Sign(MovementDirection.x) < 0) {
 			cd.x = 0;
 		}
 		CurveDirection = cd;
 		IsCurving = Mathf.Abs(Vector2.Dot(cd, MovementDirection)) < 0.5f;
-		Curve = 0;
+		if(resetCurve) {
+			Curve = 0;
+		}
 	}
 
 	public void HandleNonPlayerCollision(float dot, Vector3 normal, Vector3 extraMovement, float msIncrease = 0.25f, Vector3? surfaceData = null) {
