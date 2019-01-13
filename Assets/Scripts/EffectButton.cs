@@ -3,7 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
-public enum ButtonLocation {
+public enum CommandLocation {
+	None = 0,
 	TopLeft = 1,
 	TopRight = 2,
 	BottomLeft = 4,
@@ -12,7 +13,7 @@ public enum ButtonLocation {
 
 public class EffectButton : MonoBehaviour
 {
-	public ButtonLocation buttonLocation;
+	public CommandLocation buttonLocation;
 
 	private bool isBottom;
 
@@ -32,7 +33,7 @@ public class EffectButton : MonoBehaviour
 	}
 
 	private void Start() {
-		isBottom = buttonLocation == ButtonLocation.BottomLeft || buttonLocation == ButtonLocation.BottomRight;
+		isBottom = buttonLocation == CommandLocation.BottomLeft || buttonLocation == CommandLocation.BottomRight;
 		Effected = EffectedGameObjects.Select( g => g.GetComponent<IButtonEffected>() ).ToList();
 	}
 
@@ -51,8 +52,8 @@ public class EffectButton : MonoBehaviour
 	}
 
 	public void Pressed(float amount) {
-		foreach(var e in Effected) {
-			e.AddActor(this.buttonLocation, amount);
-		}
+		//foreach(var e in Effected) {
+		//	e.AddActor(this.buttonLocation, amount);
+		//}
 	}
 }

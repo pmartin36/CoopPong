@@ -64,18 +64,18 @@ public class MovementData  {
 		ActualMoveSpeed = delta.magnitude;
 	}
 
-	public void AddCurve(float add) {
-		float modifier;
-		if (Curve * add < 0) {
-			// trying to return to zero spin
-			Rotation = Mathf.Clamp(Rotation + add * 2, -600, 600);
-			Curve = Rotation / 250f;
+	public void AddRotation(float add, bool oppositeDirection) {
+		float max = 600;
+		float curveMod = 300f;
+		if(oppositeDirection) {
+			max *= 2f;
+			curveMod *= 2.5f;
 		}
-		else {
-			// modifier = 10 / (Mathf.Sqrt(Mathf.Abs(Rotation)) + 1);
-			Rotation = Mathf.Clamp(Rotation + add, -600, 600);
-			Curve = Rotation / 250f;
-		}
+
+		float newRotation = Mathf.Clamp(Rotation + add, -max, max);
+		float rotationDiff = newRotation - Rotation;
+		Rotation = newRotation;
+		Curve += rotationDiff / curveMod;
 		CalculateCurve(false);
 	}
 

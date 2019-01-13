@@ -77,6 +77,12 @@ public class Player : MonoBehaviour
 	private List<GameObject> EffectedGameObjects;
 	private List<IButtonEffected> Effected;
 
+	[SerializeField]
+	private Pet Pet;
+
+	private CommandLocation UpCommand { get; set; }
+	private CommandLocation DownCommand { get; set; }
+
 	public float YMove {
 		get { return lastFrameMoveSpeed; }
 	}
@@ -136,6 +142,10 @@ public class Player : MonoBehaviour
 
 		Effected = EffectedGameObjects.Select(g => g?.GetComponent<IButtonEffected>()).ToList();
 		pipsOut = true;
+
+		UpCommand = PlayerSide.Right == Side ? CommandLocation.TopRight : CommandLocation.TopLeft;
+		DownCommand = PlayerSide.Right == Side ? CommandLocation.BottomRight : CommandLocation.BottomLeft;
+		Pet.Init(UpCommand, DownCommand, Effected);
 	}
 
 	private void CalculateColor() {
@@ -220,25 +230,21 @@ public class Player : MonoBehaviour
 				IsControlling = true;
 				if(RemoteControlActive) {
 					RemoteControl.HandleInput(vertical);
+					Pet.Amount = 0;
 				}
 				else {
 					var vertAbs = Mathf.Abs(vertical);
 					foreach (IButtonEffected e in Effected) {
-						if (Side == PlayerSide.Right) {
-							if (vertical > 0.5f) {
-								e.AddActor(ButtonLocation.TopRight, vertAbs);
-							}
-							else if (vertical < -0.5f) {
-								e.AddActor(ButtonLocation.BottomRight, vertAbs);
-							}
+						if (vertical > 0.1f) {
+							Pet.SetCommand(UpCommand, vertAbs);
+							// e.AddActor(UpCommand, vertAbs);
+						}
+						else if (vertical < -0.1f) {
+							Pet.SetCommand(DownCommand, vertAbs);
+							// e.AddActor(DownCommand, vertAbs);
 						}
 						else {
-							if (vertical > 0.5f) {
-								e.AddActor(ButtonLocation.TopLeft, vertAbs);
-							}
-							else if (vertical < -0.5f) {
-								e.AddActor(ButtonLocation.BottomLeft, vertAbs);
-							}
+							Pet.Amount = 0;
 						}
 					}
 				}
@@ -246,6 +252,7 @@ public class Player : MonoBehaviour
 			else {
 				IsControlling = false;
 				targetMoveSpeed = vertical * MaxMoveSpeed * MovespeedSlow;
+				Pet.Amount = 0;
 				if (button1) {
 					if(LaserActive) {
 						Laser.TryFire();

@@ -42,13 +42,7 @@ public class Ball : BaseBall
     // Update is called once per frame
     public override void FixedUpdate()
     {
-		if (RemoteControlled) {
-			base.FixedUpdate();
-			foreach(Player p in CpuControlledPlayers) {
-				p.GoToLocation(transform.position.y);
-			}
-		}
-		else if (projectedFlight != null && projectedFlight.Count > projectedFlightIndex - 1) {
+		 if (projectedFlight != null && projectedFlight.Count > projectedFlightIndex - 1) {
 			lastMovement = projectedFlight[projectedFlightIndex];
 			Vector3 lastMoveDirection = lastMovement.ActualMovementDirection;
 
@@ -145,6 +139,7 @@ public class Ball : BaseBall
 			if(IsBigBall) {
 				player.ApplyMoveSlow();
 			}
+			RemoteControlled = false;
 		}
 	}
 
@@ -293,7 +288,16 @@ public class Ball : BaseBall
 
 	public void RemoteControl(float v) {
 		RemoteControlled = true;
-		MovementData.AddCurve(v * 30);
+
+		float modifier = 300;
+		bool oppositeDirection = false;
+		if(Mathf.Sign(MovementData.Rotation * v) < 0) {
+			oppositeDirection = true;
+			modifier += Mathf.Abs(MovementData.Rotation) * 2f;
+		}
+
+		MovementData.AddRotation(v * modifier, oppositeDirection);
+		projectedFlight = GetFlightPath(null, AimAssist.None);
 	}
 
 	public void OnTriggerEnter2D(Collider2D collision) {

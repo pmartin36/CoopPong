@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -11,10 +12,18 @@ public class HideOnPress : MonoBehaviour, IButtonEffected {
 	Coroutine waitingForEnable;
 
 	public float Amount { get; set; }
-	public ButtonLocation[] PositiveActors;
-	public ButtonLocation[] NegativeActors;
+	public CommandLocation[] PositiveActors;
+	public CommandLocation[] NegativeActors;
 
-	public void AddActor(ButtonLocation location, float amount) {
+	public ModifiableTResult<CommandLocation, Transform, TargetPosRot> OccupantTargetTransform =>
+		(CommandLocation location, Transform otransform, ref TargetPosRot posRot) => {
+			posRot.Position = transform.position;
+		};
+
+	public GameObject GameObject { get => gameObject; }
+
+	public void AddActor(Pet p, float amount) {
+		var location = p.Command;
 		if (PositiveActors.Any(a => a == location)) {
 			Amount += amount;
 		}
@@ -22,6 +31,8 @@ public class HideOnPress : MonoBehaviour, IButtonEffected {
 			Amount -= amount;
 		}
 	}
+
+	public void RemoveActor(Pet p) { }
 
 	private void SetEnabled(bool enabled) {
 		if(Enabled != enabled) {
@@ -60,5 +71,9 @@ public class HideOnPress : MonoBehaviour, IButtonEffected {
 			yield return new WaitForEndOfFrame();
 		}
 		SetProps();
+	}
+
+	public bool IsEffectedByButtonLocation(CommandLocation bl) {
+		return PositiveActors.Any(a => a == bl) || NegativeActors.Any(a => a == bl);
 	}
 }

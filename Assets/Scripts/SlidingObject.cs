@@ -10,35 +10,37 @@ public class SlidingObject : MonoBehaviour, IMoving {
 	private MinMax Range;
 
 	[SerializeField]
-	private Transform Object;
+	protected Transform ObjectOnTrack;
 	[SerializeField]
-	private Transform Track;
+	protected Transform Track;
 
 	public float Direction;
 	public float Speed;
+	protected Vector3 TrackDirection;
 
 	public void Move(float diff) {
-		var pos = Object.transform.localPosition.y + diff;
+		var pos = ObjectOnTrack.transform.localPosition.y + diff;
 		pos = Mathf.Clamp(pos, Range.Min, Range.Max);
-		Object.transform.localPosition = new Vector2(0, pos);
+		ObjectOnTrack.transform.localPosition = TrackDirection * pos;
 
-		LastFramePosition = Object.transform.localPosition;
+		LastFramePosition = ObjectOnTrack.transform.localPosition;
 	}
 
-	public void Start() {
-		float r = Track.localScale.y / 2f;
+	public virtual void Start() {
+		float r = Track.localScale.x / 2f;
 		Range = new MinMax(-r, r);
+		TrackDirection = Utils.AngleToVector(Track.rotation.eulerAngles.z);
 	}
 
 	public virtual void LateUpdate() {
 		Move(Speed * Direction * Time.deltaTime);
-		var newPosition = Object.transform.localPosition.y;
+		var newPosition = ObjectOnTrack.transform.localPosition.y;
 		if (newPosition >= Range.Max || newPosition <= Range.Min) {
 			Direction *= -1f;
 		}
 	}
 
 	public Vector3 GetMovementAmount(Vector3 position) {
-		return Object.transform.position - LastFramePosition;
+		return ObjectOnTrack.transform.position - LastFramePosition;
 	}
 }
