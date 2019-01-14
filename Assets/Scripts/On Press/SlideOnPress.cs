@@ -28,8 +28,8 @@ class SlideOnPress : SlidingObject, IButtonEffected {
 				//up and down
 
 			}
-			float y_sign = location == CommandLocation.TopLeft || location == CommandLocation.TopRight ? 1 : -1;
-			float x_sign = location == CommandLocation.TopRight || location == CommandLocation.BottomRight ? 1 : -1;
+			float y_sign = location == CommandLocation.UpLeft || location == CommandLocation.UpRight ? 1 : -1;
+			float x_sign = location == CommandLocation.UpRight || location == CommandLocation.DownRight ? 1 : -1;
 			Vector3 diff = new Vector2(
 				Actors.Count > 1 ? otransform.lossyScale.x * x_sign / 2f : 0,
 				pushPointDiffFromTransform.y * y_sign);

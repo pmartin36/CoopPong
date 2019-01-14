@@ -16,10 +16,14 @@ public class LevelManager : ContextManager
 
 	public bool IsSlowMode { get; private set; }
 
+	public override void Awake() {
+		base.Awake();
+		float size = Camera.main.orthographicSize;
+		LevelPlayableMinMax = new MinMax(-size, size - 0.5f);
+	}
+
 	public override void Start() {
 		base.Start();
-		// SpawnExport spawnData = Instantiate(SpawnDataAsset);
-		// Spawner = new Spawner(spawnData.SpawnInfo);
 		Balls = FindObjectsOfType<Ball>();
 
 		if(!LeftPlayer.PlayerControlled) {
@@ -27,10 +31,7 @@ public class LevelManager : ContextManager
 		}
 		if(!RightPlayer.PlayerControlled) {
 			CpuControlledPlayers.Add(RightPlayer);
-		}
-
-		float size = Camera.main.orthographicSize - 0.1f;
-		LevelPlayableMinMax = new MinMax(-size, size);
+		}	
 	}
 
 	public void Update() {

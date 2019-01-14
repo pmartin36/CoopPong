@@ -5,10 +5,10 @@ using UnityEngine;
 
 public enum CommandLocation {
 	None = 0,
-	TopLeft = 1,
-	TopRight = 2,
-	BottomLeft = 4,
-	BottomRight = 8
+	UpLeft = 1,
+	UpRight = 2,
+	DownLeft = 4,
+	DownRight = 8
 }
 
 public class EffectButton : MonoBehaviour
@@ -33,7 +33,7 @@ public class EffectButton : MonoBehaviour
 	}
 
 	private void Start() {
-		isBottom = buttonLocation == CommandLocation.BottomLeft || buttonLocation == CommandLocation.BottomRight;
+		isBottom = buttonLocation == CommandLocation.DownLeft || buttonLocation == CommandLocation.DownRight;
 		Effected = EffectedGameObjects.Select( g => g.GetComponent<IButtonEffected>() ).ToList();
 	}
 

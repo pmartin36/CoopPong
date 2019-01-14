@@ -23,11 +23,8 @@ public class Player : MonoBehaviour
 {
 	public float BaseSpeed;
 	public float Width { get; private set; }
-	public float BodyWidth {
-		get {
-			return (Width / 2f) - 0.25f;
-		}
-	}
+	public float BodyWidth { get => Width - 1.085f; }
+	public float HalfLength { get => Width / 2f; }
 
 	public float Energy { get; private set; }
 	public bool IsSlowed { get; private set; }
@@ -50,7 +47,6 @@ public class Player : MonoBehaviour
 
 	public AimAssist AimAssist;
 
-	private static float yMaximum;
 	public MinMax MovementRange;
 	public PlayerSide Side { get; set; }
 
@@ -143,8 +139,8 @@ public class Player : MonoBehaviour
 		Effected = EffectedGameObjects.Select(g => g?.GetComponent<IButtonEffected>()).ToList();
 		pipsOut = true;
 
-		UpCommand = PlayerSide.Right == Side ? CommandLocation.TopRight : CommandLocation.TopLeft;
-		DownCommand = PlayerSide.Right == Side ? CommandLocation.BottomRight : CommandLocation.BottomLeft;
+		UpCommand = PlayerSide.Right == Side ? CommandLocation.UpRight : CommandLocation.UpLeft;
+		DownCommand = PlayerSide.Right == Side ? CommandLocation.DownRight : CommandLocation.DownLeft;
 		Pet.Init(UpCommand, DownCommand, Effected);
 	}
 
@@ -319,8 +315,9 @@ public class Player : MonoBehaviour
 		else {		
 			//0.5425 = height of end caps
 			Width = (bodyWidth + 0.5425f / 2f) * 2;
-			yMaximum = Camera.main.orthographicSize - (Width / 2) - 0.5425f / 2f;
-			MovementRange = new MinMax(-yMaximum, yMaximum);
+
+			MinMax levelMinMax = GameManager.Instance.LevelManager.LevelPlayableMinMax;
+			MovementRange = new MinMax(levelMinMax.Min + HalfLength, levelMinMax.Max - HalfLength);
 
 			capsuleCollider.size = new Vector2(capsuleCollider.size.x, Width);
 			body.localScale = new Vector2(body.localScale.x, bodyWidth);
@@ -366,9 +363,10 @@ public class Player : MonoBehaviour
 				SetBodyWidth( BodyWidth - 0.5f );
 				break;
 			case StatusEffect.Jailed:
+				MinMax levelMinMax = GameManager.Instance.LevelManager.LevelPlayableMinMax;
 				MovementRange = new MinMax(
-					Mathf.Max(-yMaximum, transform.position.y - 3f),
-					Mathf.Min(yMaximum, transform.position.y + 3f)
+					Mathf.Max(levelMinMax.Min + HalfLength, transform.position.y - 3f),
+					Mathf.Min(levelMinMax.Max - HalfLength, transform.position.y + 3f)
 				);
 				break;
 			case StatusEffect.Blinded:
@@ -387,7 +385,10 @@ public class Player : MonoBehaviour
 				SetBodyWidth(BodyWidth + 0.5f);
 				break;
 			case StatusEffect.Jailed:
-				MovementRange = new MinMax(-yMaximum, yMaximum);
+				if(GameManager.Instance?.LevelManager?.LevelPlayableMinMax != null) {
+					MinMax levelMinMax = GameManager.Instance.LevelManager.LevelPlayableMinMax;
+					MovementRange = new MinMax(levelMinMax.Min + HalfLength, levelMinMax.Max - HalfLength);
+				}		
 				break;
 			case StatusEffect.Blinded:
 				break;

@@ -9,7 +9,7 @@ public class SpinOnPress : Spinner, IButtonEffected {
 
 	public ModifiableTResult<CommandLocation, Transform, TargetPosRot> OccupantTargetTransform =>
 		(CommandLocation location, Transform otransform, ref TargetPosRot posRot) => {
-			float x_sign = (location == CommandLocation.BottomRight || location == CommandLocation.TopRight) ? 1 : -1;
+			float x_sign = (location == CommandLocation.DownRight || location == CommandLocation.UpRight) ? 1 : -1;
 			posRot.Position = transform.position + new Vector3(otransform.lossyScale.x / 2f * x_sign, 0);
 	};
 	public GameObject GameObject { get => gameObject; }
