@@ -12,7 +12,7 @@ public class LevelManager : ContextManager
 
 	public SpawnExport SpawnDataAsset;
 
-	// public Spawner Spawner;
+	public MinMax LevelPlayableMinMax;
 
 	public bool IsSlowMode { get; private set; }
 
@@ -28,6 +28,9 @@ public class LevelManager : ContextManager
 		if(!RightPlayer.PlayerControlled) {
 			CpuControlledPlayers.Add(RightPlayer);
 		}
+
+		float size = Camera.main.orthographicSize - 0.1f;
+		LevelPlayableMinMax = new MinMax(-size, size);
 	}
 
 	public void Update() {

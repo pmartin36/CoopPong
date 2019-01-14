@@ -19,6 +19,8 @@ public class Pet: MonoBehaviour {
 	private List<IButtonEffected> downEffected;
 	private IButtonEffected currentEffected;
 
+	private float defaultRotationSign;
+
 	public bool OnScreen {
 		get {
 			var viewportPosition = mainCamera.WorldToViewportPoint(transform.position);
@@ -43,11 +45,12 @@ public class Pet: MonoBehaviour {
 				downEffected.Add(e);
 			}
 		}
+		defaultRotationSign = downCommand == CommandLocation.BottomLeft ? -1f : 1f;
 	}
 
 	public void Update() {
-		if(timeSinceLastCommand > 5 && currentEffected != null && OnScreen) {
-			ClearCommand();
+		if(timeSinceLastCommand > 5 && OnScreen) {
+			ClearCommand(true);
 		}
 
 		float distToTarget;
@@ -64,25 +67,37 @@ public class Pet: MonoBehaviour {
 			distToTarget = movement.magnitude;
 		}
 
-		var distToMove = 15 * Time.deltaTime;
+		float distToMove = 15 * Time.deltaTime;
 		if(distToMove > distToTarget) {
 			distToMove = distToTarget;
 		}
 		transform.position += distToMove * direction;
 
-		var angleToRotate = 360 * Time.deltaTime;
-		var angleToTarget = Target.Rotation - transform.rotation.eulerAngles.z;
-		if ( angleToTarget < angleToRotate) {
+
+		// TODO: Make them rotate on opposite sides
+		float targetAngle = distToTarget < 2f ? Target.Rotation : Utils.VectorToAngle(direction);
+		targetAngle = (targetAngle + 360) % 360;
+		float currentAngle = (transform.rotation.eulerAngles.z + 360) % 360;
+		float angleToRotate = 540 * defaultRotationSign * Time.deltaTime;
+		float angleToTarget = (targetAngle - currentAngle);
+		if (Mathf.Abs(angleToTarget) < Mathf.Abs(angleToRotate)) {
 			angleToRotate = angleToTarget;
 		}
-		transform.rotation = Quaternion.Euler(0, 0, transform.rotation.eulerAngles.z + angleToRotate);
+		else if (angleToTarget > 180 || angleToTarget * defaultRotationSign < 0) {
+			angleToRotate *= -1f;
+		}
+
+		transform.rotation = Quaternion.Euler(0, 0, currentAngle + angleToRotate);
+		
 
 		timeSinceLastCommand += Time.deltaTime;
 	}
 
 	public void SetCommand(CommandLocation bl, float amount) {
 		if(bl == CommandLocation.None) {
-			Amount = 0;
+			if(bl != Command) {
+				ClearCommand();
+			}
 		}
 		else {
 			if(Command != bl) {
@@ -101,14 +116,16 @@ public class Pet: MonoBehaviour {
 		
 	}
 
-	private void ClearCommand() {
+	private void ClearCommand(bool flyOff = false) {
 		currentEffected?.RemoveActor(this);
 		currentEffected = null;
 		Command = CommandLocation.None;
 		Amount = 0;
-		var sign = Mathf.Sign(transform.position.y);
-		Target.Position = new Vector2(transform.position.x, sign * 12);
-		Target.Rotation = sign * 90f;
+		if(flyOff) {
+			var sign = Mathf.Sign(transform.position.y);
+			Target.Position = new Vector2(transform.position.x, sign * 12);
+			Target.Rotation = sign * 90f;
+		}
 	}
 
 	public void SetTarget() {

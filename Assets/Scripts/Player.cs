@@ -229,8 +229,8 @@ public class Player : MonoBehaviour
 			if (buttonDown) {
 				IsControlling = true;
 				if(RemoteControlActive) {
+					Pet.SetCommand(CommandLocation.None, 0);
 					RemoteControl.HandleInput(vertical);
-					Pet.Amount = 0;
 				}
 				else {
 					var vertAbs = Mathf.Abs(vertical);
@@ -250,9 +250,9 @@ public class Player : MonoBehaviour
 				}
 			}
 			else {
+				Pet.SetCommand(CommandLocation.None, 0);
 				IsControlling = false;
 				targetMoveSpeed = vertical * MaxMoveSpeed * MovespeedSlow;
-				Pet.Amount = 0;
 				if (button1) {
 					if(LaserActive) {
 						Laser.TryFire();

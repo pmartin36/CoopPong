@@ -35,19 +35,27 @@ public class JailEnemy : BaseEnemy, IEffector {
 		Spawning = false;
 		gameObject.layer = LayerMask.NameToLayer("Target");
 
-		var oldMinMax = targetedPlayer.MovementRange;
+		MinMax oldMinMax = targetedPlayer.MovementRange;
 		targetedPlayer.AddStatusEffect(this);
+
+		MinMax levelMinMax = GameManager.Instance.LevelManager.LevelPlayableMinMax;
 
 		JailBarPrefab = JailBarPrefab ?? Resources.Load<JailBar>("Prefabs/Jail Bar");
 		if (targetedPlayer.MovementRange.Min > oldMinMax.Min) {
 			JailBar b = Instantiate(JailBarPrefab);
-			b.transform.position = new Vector3(targetedPlayer.transform.position.x, targetedPlayer.MovementRange.Min - (targetedPlayer.Width + b.transform.lossyScale.y) / 2f);
+			float scale = (targetedPlayer.MovementRange.Min - targetedPlayer.Width / 2f) - levelMinMax.Min;
+			float position = levelMinMax.Min + scale / 2f;
+			b.transform.position = new Vector3(targetedPlayer.transform.position.x * 1.05f, position);
+			b.transform.localScale = new Vector3(b.transform.localScale.x, scale);
 			b.SignUpForDestroyedEvent(this);
 		}
 
 		if(targetedPlayer.MovementRange.Max < oldMinMax.Max){
 			JailBar b = Instantiate(JailBarPrefab);
-			b.transform.position = new Vector3(targetedPlayer.transform.position.x, targetedPlayer.MovementRange.Max + (targetedPlayer.Width + b.transform.lossyScale.y) / 2f);
+			float scale = levelMinMax.Max - (targetedPlayer.MovementRange.Max + targetedPlayer.Width / 2f);
+			float position = levelMinMax.Max - scale / 2f;
+			b.transform.position = new Vector3(targetedPlayer.transform.position.x * 1.05f, position);
+			b.transform.localScale = new Vector3(b.transform.localScale.x, scale);
 			b.SignUpForDestroyedEvent(this);
 		}	
 	}
