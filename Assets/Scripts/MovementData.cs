@@ -25,12 +25,21 @@ public class MovementData  {
 
 	public MovementData(Vector3 p) : this( 
 			position: p,
-			movementDirection: Utils.AngleToVector(Random.value * 360),
+			movementDirection: Vector3.zero,
 			moveSpeed: BaseBall.BaseSpeed,
 			rotation: 0,
 			curve: 0,
 			curveDirection: Vector2.zero,
-			isCurving: false) { } 
+			isCurving: false) { }
+
+	public MovementData(Vector3 p, Vector3 md) : this(
+			position: p,
+			movementDirection: md,
+			moveSpeed: BaseBall.BaseSpeed,
+			rotation: 0,
+			curve: 0,
+			curveDirection: Vector2.zero,
+			isCurving: false) { }
 
 	public MovementData(MovementData d) : this(
 		new Vector3(d.Position.x, d.Position.y),

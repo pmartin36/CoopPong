@@ -8,6 +8,10 @@ public class LevelManager : ContextManager
 	public Player RightPlayer;
 
 	public Ball[] Balls;
+
+	private int _numActiveBalls;
+	public int NumActiveBalls { get => _numActiveBalls; set => _numActiveBalls = Mathf.Max(0, value); }
+
 	public readonly List<Player> CpuControlledPlayers = new List<Player>();
 
 	public SpawnExport SpawnDataAsset;
@@ -40,11 +44,11 @@ public class LevelManager : ContextManager
 
 	public override void HandleInput(InputPackage p) {
 		if(LeftPlayer != null) {
-			LeftPlayer.HandleInput(p.LeftPlayerVertical, p.LeftPlayerFlip, p.LeftPlayerButton2);
+			LeftPlayer.HandleInput(p.LeftPlayerVertical, p.LeftPlayerLaunchBall, p.LeftPlayerFlip, p.LeftPlayerButton2);
 		}
 
 		if(RightPlayer != null) {
-			RightPlayer.HandleInput(p.RightPlayerVertical, p.RightPlayerFlip, p.RightPlayerButton2);
+			RightPlayer.HandleInput(p.RightPlayerVertical, p.RightPlayerLaunchBall, p.RightPlayerFlip, p.RightPlayerButton2);
 		}
 	}
 
@@ -66,9 +70,9 @@ public class LevelManager : ContextManager
 		return true;
 	}
 
-	public void PlayerLifeLost() {
-		LeftPlayer.gameObject.SetActive(true);
-		RightPlayer.gameObject.SetActive(true);
+	public void PlayerLifeLost(Ball ball) {
+		LeftPlayer.SetInPlay(true);
+		RightPlayer.SetInPlay(true);
 	}
 
 	public void LateUpdate() {

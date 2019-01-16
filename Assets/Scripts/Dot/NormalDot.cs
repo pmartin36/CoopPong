@@ -16,7 +16,7 @@ public class NormalDot : Dot
 			Powerup.Init(md);
 		}
 		else {
-			Powerup.Init(new MovementData(transform.position));
+			Powerup.Init(new MovementData(transform.position, Utils.AngleToVector(Random.value * 360)));
 		}
 	}
 }

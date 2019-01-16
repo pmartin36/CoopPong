@@ -17,6 +17,8 @@ public class Ball : BaseBall
 	private AimAssist AimAssist;
 	private bool aimAssistNeeded = true;
 
+	public bool Stopped { get; set; }
+
 	public bool RemoteControlled { get; set; }
 	public List<Player> CpuControlledPlayers {
 		get {
@@ -36,13 +38,21 @@ public class Ball : BaseBall
     {
 		base.Start();
 		targetLayermask = 1 << LayerMask.NameToLayer("Target");
-		GenerateRandomPositionAndDirection();
+		Stopped = true;
+		SelectPlayerAndDropBall(true);
 	}
 
     // Update is called once per frame
     public override void FixedUpdate()
     {
-		 if (projectedFlight != null && projectedFlight.Count > projectedFlightIndex - 1) {
+		if (Stopped) {
+			hitBetweenLastMove = Physics2D.CircleCast(transform.position, ballRadius, Vector3.zero, 0, playerLayermask);
+			if (hitBetweenLastMove.collider != null) {
+				MovementData = new MovementData(transform.position);
+				HandlePlayerCollision(-1, Vector3.right, hitBetweenLastMove, Vector3.zero);
+			}
+		}
+		else if (projectedFlight != null && projectedFlight.Count > projectedFlightIndex - 1) {
 			lastMovement = projectedFlight[projectedFlightIndex];
 			Vector3 lastMoveDirection = lastMovement.ActualMovementDirection;
 
@@ -122,11 +132,18 @@ public class Ball : BaseBall
 			Vector3 point = hit.point;
 			MovementData.MovementDirection = player.GetBallTrajectory(this, point, lastMoveDirection);
 
-			// Debug.Log(hitBetweenLastMove.centroid);
+			if(Stopped) {
+				Stopped = false;
+				MovementData.MoveSpeed = BaseSpeed;
+				GameManager.Instance.LevelManager.NumActiveBalls++;
+			}
+			else {
+				MovementData.MoveSpeed += player.GetMSDelta(point, lastMoveDirection);
+			}
+
 			MovementData.Position = hit.centroid;
 			MovementData.Rotation += player.YMove * 6 * MovementData.MoveSpeed * -Mathf.Sign(MovementData.MovementDirection.x) * player.GetRotationModifier(point, lastMoveDirection);
-
-			MovementData.MoveSpeed += player.GetMSDelta(point, lastMoveDirection);
+		
 			AimAssist = player.AimAssist;
 			aimAssistNeeded = AimAssist != AimAssist.None;
 
@@ -141,6 +158,29 @@ public class Ball : BaseBall
 			}
 			RemoteControlled = false;
 		}
+	}
+
+	private void SelectPlayerAndDropBall(bool randomPlayer) {
+		PlayerSide pSide;
+		if(randomPlayer) {
+			var cpuPlayers = CpuControlledPlayers;
+			if (cpuPlayers.Count == 1) {
+				// choose non cpu side
+				pSide = cpuPlayers[0].Side == PlayerSide.Right ? PlayerSide.Left : PlayerSide.Right; 
+			}
+			else {
+				pSide = (PlayerSide)Random.Range(0,2);
+			}
+		}
+		else {
+			pSide = transform.position.x > 0 ? PlayerSide.Right : PlayerSide.Left;
+		}
+
+		GameManager.Instance.LevelManager.NumActiveBalls--;
+		Stopped = true;
+
+		Player player = pSide == PlayerSide.Right ? GameManager.Instance.LevelManager.RightPlayer : GameManager.Instance.LevelManager.LeftPlayer;
+		player.PlaceBall(this);
 	}
 
 	private void GenerateRandomPositionAndDirection() {
@@ -302,8 +342,8 @@ public class Ball : BaseBall
 
 	public void OnTriggerEnter2D(Collider2D collision) {
 		if (collision.CompareTag("ScoreZone")) {
-			GenerateRandomPositionAndDirection();
-			GameManager.Instance.LevelManager.PlayerLifeLost();
+			GameManager.Instance.LevelManager.PlayerLifeLost(this);
+			SelectPlayerAndDropBall(false);
 		}
 	}
 

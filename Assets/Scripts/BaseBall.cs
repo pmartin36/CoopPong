@@ -12,6 +12,7 @@ public abstract class BaseBall : MonoBehaviour
 	protected CircleCollider2D ccollider;
 
 	protected LayerMask collidableLayermask;
+	protected LayerMask playerLayermask;
 	protected LayerMask playerAndColliderLayermask;
 
 	protected Collider2D lastUpdateCollider = null;
@@ -39,8 +40,9 @@ public abstract class BaseBall : MonoBehaviour
 	public virtual void Start() {
 		ccollider = GetComponent<CircleCollider2D>();
 		SetBallRadius(0.25f);
+		playerLayermask = 1 << LayerMask.NameToLayer("Player");
 		collidableLayermask = 1 << LayerMask.NameToLayer("Collidable");
-		playerAndColliderLayermask = collidableLayermask | 1 << LayerMask.NameToLayer("Player");
+		playerAndColliderLayermask = collidableLayermask | playerLayermask;
 	}
 
 	protected abstract void HandlePlayerCollision(float dot, Vector2 normal, RaycastHit2D hit, Vector3 lastMoveDirection);

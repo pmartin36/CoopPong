@@ -30,6 +30,8 @@ public class Player : MonoBehaviour
 	public bool IsSlowed { get; private set; }
 	public bool IsControlling { get; private set; }
 
+	public bool InPlay { get; private set; }
+
 	public LaserAttachment Laser;
 	public bool LaserActive {
 		get { return Laser.isActiveAndEnabled; }
@@ -44,6 +46,8 @@ public class Player : MonoBehaviour
 	private float targetMoveSpeed;
 	private float lastFrameMoveSpeed;
 	private float lastFrameAcceleration;
+
+	private float? forcedMovementLocation;
 
 	public AimAssist AimAssist;
 
@@ -68,6 +72,10 @@ public class Player : MonoBehaviour
 	private float CpuBasePlacement;
 	private float CpuOffsetPlacement;
 	private bool CpuReachedBasePlacement;
+
+	public float OffsetFromLine;
+	public Ball LastBallInteractedWith { get; private set; }
+	public bool CanPerformActions { get => InPlay && LastBallInteractedWith != null && !LastBallInteractedWith.Stopped; }
 
 	[SerializeField]
 	private List<GameObject> EffectedGameObjects;
@@ -136,16 +144,21 @@ public class Player : MonoBehaviour
 		capsuleCollider = GetComponent<CapsuleCollider2D>();
 		SetBodyWidth(1.15f, false);
 
+		transform.position = new Vector3(transform.position.x, UnityEngine.Random.Range(MovementRange.Min, MovementRange.Max));
+
 		Effected = EffectedGameObjects.Select(g => g?.GetComponent<IButtonEffected>()).ToList();
 		pipsOut = true;
 
 		UpCommand = PlayerSide.Right == Side ? CommandLocation.UpRight : CommandLocation.UpLeft;
 		DownCommand = PlayerSide.Right == Side ? CommandLocation.DownRight : CommandLocation.DownLeft;
 		Pet.Init(UpCommand, DownCommand, Effected);
+
+		InPlay = true;
 	}
 
 	private void CalculateColor() {
 		Color baseColor = IsSlowed ? new Color(0.67f, 0.84f, 0.87f) : Color.white;
+		baseColor *= InPlay ? Color.white : new Color(0,0,0,0.5f);
 		foreach (SpriteRenderer s in spriteRenderers) {
 			if(!IsControlling) {
 				s.color = baseColor;
@@ -173,7 +186,7 @@ public class Player : MonoBehaviour
 		if(PlayerControlled) {
 			MoveFromInput(out bool overMaxSpeed);
 		}
-		else {
+		else if (forcedMovementLocation == null) {
 			float diff = CpuOffsetPlacement - transform.position.y;
 			float diffAbs = Mathf.Abs(diff);
 			float distance = Mathf.Min(diffAbs, (MaxMoveSpeed * MovespeedSlow) * Time.fixedDeltaTime);
@@ -193,7 +206,7 @@ public class Player : MonoBehaviour
 			lastFrameMoveSpeed = 0;
 			lastFrameAcceleration = 0;
 		}
-		else{
+		else if(forcedMovementLocation == null) {
 			float targetDelta = targetMoveSpeed; 
 			lastFrameMoveSpeed = lastFrameMoveSpeed  + (lastFrameAcceleration * Time.fixedDeltaTime);
 			if(pipsOut) {
@@ -218,11 +231,11 @@ public class Player : MonoBehaviour
 		}
 	}
 
-	public void HandleInput(float vertical, bool button1, bool button2) {
+	public void HandleInput(float vertical, bool launch, bool button1, bool button2) {
 		verticalInput = vertical;
 		if(PlayerControlled) {
 			buttonDown = button2;
-			if (buttonDown) {
+			if (buttonDown && CanPerformActions) {
 				IsControlling = true;
 				if(RemoteControlActive) {
 					Pet.SetCommand(CommandLocation.None, 0);
@@ -249,7 +262,13 @@ public class Player : MonoBehaviour
 				Pet.SetCommand(CommandLocation.None, 0);
 				IsControlling = false;
 				targetMoveSpeed = vertical * MaxMoveSpeed * MovespeedSlow;
-				if (button1) {
+
+				if(LastBallInteractedWith != null && LastBallInteractedWith.Stopped && launch && OffsetFromLine < 0.01f) {
+					// allow push out
+					StartCoroutine(PushBall());
+				}
+
+				if (button1 && CanPerformActions) {
 					if(LaserActive) {
 						Laser.TryFire();
 					}
@@ -272,8 +291,14 @@ public class Player : MonoBehaviour
 		MaxMoveSpeed = BaseSpeed;
 	}
 
+	public void PlaceBall(Ball b) {
+		LastBallInteractedWith = b;
+		b.transform.position = transform.position + new Vector3(Side == PlayerSide.Left ? 1f : -1f, 0);
+	}
+
 	public Vector3 GetBallTrajectory(Ball b, Vector3 point, Vector3 incoming) {
 		// take this opportunity to add ball to remote controller
+		LastBallInteractedWith = b;
 		RemoteControl.ControlledBall = b;
 
 		// calculate new trajectory
@@ -397,14 +422,66 @@ public class Player : MonoBehaviour
 		}
 	}
 
-	public void Hit() {
-		IsSlowed = false;
-		this.gameObject.SetActive(false);
+	public void Hit(Vector3 position) {
+		if(!LastBallInteractedWith.Stopped) {
+			IsSlowed = false;
+			SetInPlay(false);
+
+			if(position.y < transform.position.y) {
+				forcedMovementLocation = position.y + (Width + 0.5f);
+			}
+			else {
+				forcedMovementLocation = position.y - (Width + 0.5f);
+			}
+
+			if(!PlayerControlled) {
+				CpuOffsetPlacement = forcedMovementLocation.Value;
+				CpuReachedBasePlacement = false;
+			}
+			StartCoroutine(JumpFromLaser());
+		}
+	}
+
+	public void SetInPlay(bool inplay) {	
+		InPlay = inplay;
+		capsuleCollider.enabled = inplay;
 	}
 
 	private IEnumerator Slow() {
 		IsSlowed = true;
 		yield return new WaitForSeconds(4f);
 		IsSlowed = false;
+	}
+
+	private IEnumerator JumpFromLaser() {
+		float startTime = Time.time;
+		float start = transform.position.y;
+		float end = forcedMovementLocation.Value;
+		var wait = new WaitForEndOfFrame();
+		while(Time.time - startTime < 0.25f) {
+			transform.position = new Vector3(transform.position.x, Mathf.Lerp(start, end, (Time.time - startTime) / 0.25f));
+			yield return wait;
+		}
+		forcedMovementLocation = null;
+	}
+
+	private IEnumerator PushBall() {
+		float startTime = Time.time;
+		float baseline = transform.position.x;
+		float pushedPosition = Side == PlayerSide.Right ? -1f : 1f;
+		var wait = new WaitForEndOfFrame();
+
+		while (Time.time - startTime < 0.25f) {
+			OffsetFromLine = Mathf.Lerp(0, pushedPosition, (Time.time - startTime) / 0.25f);
+			transform.position = new Vector3(baseline + OffsetFromLine, transform.position.y);
+			yield return wait;
+		}
+
+		startTime = Time.time;
+		while (Time.time - startTime < 0.3f) {
+			OffsetFromLine = Mathf.Lerp(pushedPosition, 0, (Time.time - startTime) / 0.25f);
+			transform.position = new Vector3(baseline + OffsetFromLine, transform.position.y);
+			yield return wait;
+		}
 	}
 }
