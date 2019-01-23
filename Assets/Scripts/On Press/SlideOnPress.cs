@@ -37,22 +37,24 @@ class SlideOnPress : SlidingObject, IButtonEffected {
 			posRot.Rotation = y_sign * 90f;
 		};
 
-	public override void Start() {
-		base.Start();
+	public void Awake() {
 		Actors = new HashSet<Pet>();
-		Direction = 0;
-
 
 		Collider2D c = ObjectOnTrack.GetComponent<Collider2D>();
-		if(c is CircleCollider2D) {
+		if (c is CircleCollider2D) {
 			pushPointDiffFromTransform = Vector2.down * (c as CircleCollider2D).radius;
 		}
-		else if(c is BoxCollider2D) {
-			pushPointDiffFromTransform = Vector2.down * (c as BoxCollider2D).size.y/2f;
+		else if (c is BoxCollider2D) {
+			pushPointDiffFromTransform = Vector2.down * (c as BoxCollider2D).size.y / 2f;
 		}
 		else {
 			pushPointDiffFromTransform = Vector2.down * 1;
 		}
+	}
+
+	public override void Start() {
+		base.Start();
+		Direction = 0;
 	}
 
 	public void AddActor(Pet p, float amount) {

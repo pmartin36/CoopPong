@@ -16,7 +16,7 @@ public class EnergyBar : MonoBehaviour
     
     void Update()
     {
-        slider.value = TrackedPlayer.Energy;
+        // slider.value = TrackedPlayer.Energy;
 		slider.enabled = slider.value > 0;
     }
 }

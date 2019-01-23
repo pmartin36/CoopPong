@@ -33,7 +33,7 @@ public class LaserShot : MonoBehaviour
 		if (hit.collider != null) {
 			string tag = hit.collider.gameObject.tag;
 			if (tag == "Player") {
-				Player p = hit.collider.GetComponent<Player>();
+				Player p = hit.collider.GetComponentInParent<Player>();
 				p.Hit(hit.point);
 			}
 			else if(CanCollectOrDestroy) {

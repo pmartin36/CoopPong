@@ -21,12 +21,14 @@ public struct MinMax {
 
 public class Player : MonoBehaviour
 {
+	private Paddle paddle;
+	private Character character;
+
 	public float BaseSpeed;
 	public float Width { get; private set; }
 	public float BodyWidth { get => Width - 1.085f; }
 	public float HalfLength { get => Width / 2f; }
 
-	public float Energy { get; private set; }
 	public bool IsSlowed { get; private set; }
 	public bool IsControlling { get; private set; }
 
@@ -59,13 +61,6 @@ public class Player : MonoBehaviour
 	private bool pipsOut;
 	private bool buttonDown;
 	private float verticalInput;
-	private float timeSinceLastEnergyUse;
-	
-	private CapsuleCollider2D capsuleCollider;
-	private SpriteRenderer[] spriteRenderers;
-	private Transform body;
-	private Transform topCap;
-	private Transform bottomCap;
 
 	public bool PlayerControlled;
 	// these fields only matter for cpu controlled player
@@ -87,15 +82,8 @@ public class Player : MonoBehaviour
 	private CommandLocation UpCommand { get; set; }
 	private CommandLocation DownCommand { get; set; }
 
-	public float YMove {
-		get { return lastFrameMoveSpeed; }
-	}
-
-	private float MovespeedSlow {
-		get {
-			return IsSlowed ? 0.5f : 1f;
-		}
-	}
+	public float YMove { get => lastFrameMoveSpeed; }
+	private float MovespeedSlow { get => IsSlowed ? 0.5f : 1f; }
 
 	private Player _otherPlayer;
 	public Player OtherPlayer {
@@ -120,61 +108,32 @@ public class Player : MonoBehaviour
     {
         ResetMoveSpeed();
 		Side = transform.position.x > 0 ? PlayerSide.Right : PlayerSide.Left;
-		Energy = 1;
+		UpCommand = PlayerSide.Right == Side ? CommandLocation.UpRight : CommandLocation.UpLeft;
+		DownCommand = PlayerSide.Right == Side ? CommandLocation.DownRight : CommandLocation.DownLeft;
 
-		spriteRenderers = GetComponentsInChildren<SpriteRenderer>();
-
+		Effected = EffectedGameObjects.Select(g => g?.GetComponent<IButtonEffected>()).ToList();
 		Laser = GetComponentInChildren<LaserAttachment>(true);
-		Laser.Init(this);
-
 		RemoteControl = GetComponentInChildren<RemoteControlAttachment>(true);
-
-		foreach(Transform t in transform) {
-			if(t.CompareTag("PlayerCapTop")) {
-				topCap = t;
-			}
-			else if(t.CompareTag("PlayerBody")) {
-				body = t;
-			}
-			else if(t.CompareTag("PlayerCapBottom")) {
-				bottomCap = t;
-			}	
-		}
-
-		capsuleCollider = GetComponent<CapsuleCollider2D>();
-		SetBodyWidth(1.15f, false);
+		paddle = GetComponentInChildren<Paddle>();
+		character = GetComponentInChildren<Character>();
+	
+		Laser.Init(paddle, Side);
+		SetBodyWidth(1.15f, false);	
+		paddle.Init(this);
+		Pet.Init(UpCommand, DownCommand, Effected);
 
 		transform.position = new Vector3(transform.position.x, UnityEngine.Random.Range(MovementRange.Min, MovementRange.Max));
 
-		Effected = EffectedGameObjects.Select(g => g?.GetComponent<IButtonEffected>()).ToList();
 		pipsOut = true;
-
-		UpCommand = PlayerSide.Right == Side ? CommandLocation.UpRight : CommandLocation.UpLeft;
-		DownCommand = PlayerSide.Right == Side ? CommandLocation.DownRight : CommandLocation.DownLeft;
-		Pet.Init(UpCommand, DownCommand, Effected);
-
 		InPlay = true;
 	}
 
 	private void CalculateColor() {
+		Color disabledColor = InPlay ? Color.white : new Color(0, 0, 0, 0.5f);
 		Color baseColor = IsSlowed ? new Color(0.67f, 0.84f, 0.87f) : Color.white;
-		baseColor *= InPlay ? Color.white : new Color(0,0,0,0.5f);
-		foreach (SpriteRenderer s in spriteRenderers) {
-			if(!IsControlling) {
-				s.color = baseColor;
-			}
-			else {
-				if (verticalInput > 0 && s.transform == topCap && !RemoteControlActive) {
-					s.color = baseColor * Color.red;
-				}
-				else if (verticalInput < 0 && s.transform == bottomCap && !RemoteControlActive) {
-					s.color = baseColor * Color.red;
-				}
-				else {
-					s.color = baseColor * Color.yellow;
-				}
-			}
-		}		
+
+		paddle.SetColor(disabledColor);
+		character.SetColor(baseColor);
 	}
 
 	void Update()
@@ -268,12 +227,12 @@ public class Player : MonoBehaviour
 					StartCoroutine(PushBall());
 				}
 
-				if (button1 && CanPerformActions) {
-					if(LaserActive) {
-						Laser.TryFire();
+				if (button1) {
+					if(!LaserActive) {
+						SetPipsOut(!pipsOut);
 					}
-					else {
-						SetPipsOut(!pipsOut);			
+					else if(CanPerformActions) {
+						Laser.TryFire();
 					}
 				}
 			}
@@ -282,9 +241,7 @@ public class Player : MonoBehaviour
 
 	private void SetPipsOut(bool pips) {
 		pipsOut = pips;
-		foreach (SpriteRenderer s in spriteRenderers) {
-			s.flipX = pips;
-		}
+		paddle.SetPips(pips);
 	}
 
 	public void ResetMoveSpeed() {
@@ -293,7 +250,7 @@ public class Player : MonoBehaviour
 
 	public void PlaceBall(Ball b) {
 		LastBallInteractedWith = b;
-		b.transform.position = transform.position + new Vector3(Side == PlayerSide.Left ? 1f : -1f, 0);
+		b.transform.position = paddle.transform.position + new Vector3(Side == PlayerSide.Left ? 1f : -1f, 0);
 	}
 
 	public Vector3 GetBallTrajectory(Ball b, Vector3 point, Vector3 incoming) {
@@ -344,10 +301,7 @@ public class Player : MonoBehaviour
 			MinMax levelMinMax = GameManager.Instance.LevelManager.LevelPlayableMinMax;
 			MovementRange = new MinMax(levelMinMax.Min + HalfLength, levelMinMax.Max - HalfLength);
 
-			capsuleCollider.size = new Vector2(capsuleCollider.size.x, Width);
-			body.localScale = new Vector2(body.localScale.x, bodyWidth);
-			topCap.localPosition = new Vector2(0, bodyWidth);
-			bottomCap.localPosition = new Vector2(0, -bodyWidth);
+			paddle.SetWidth(Width, bodyWidth);
 		}
 	}
 
@@ -444,7 +398,7 @@ public class Player : MonoBehaviour
 
 	public void SetInPlay(bool inplay) {	
 		InPlay = inplay;
-		capsuleCollider.enabled = inplay;
+		paddle.SetInPlay(inplay);
 	}
 
 	private IEnumerator Slow() {
@@ -467,20 +421,20 @@ public class Player : MonoBehaviour
 
 	private IEnumerator PushBall() {
 		float startTime = Time.time;
-		float baseline = transform.position.x;
 		float pushedPosition = Side == PlayerSide.Right ? -1f : 1f;
+		float baseline = Paddle.BaseLinePosition * (Side == PlayerSide.Left ? -1f : 1f);
 		var wait = new WaitForEndOfFrame();
 
 		while (Time.time - startTime < 0.25f) {
 			OffsetFromLine = Mathf.Lerp(0, pushedPosition, (Time.time - startTime) / 0.25f);
-			transform.position = new Vector3(baseline + OffsetFromLine, transform.position.y);
+			paddle.transform.position = new Vector3(baseline + OffsetFromLine, transform.position.y, paddle.transform.position.z);
 			yield return wait;
 		}
 
 		startTime = Time.time;
-		while (Time.time - startTime < 0.3f) {
+		while (Time.time - startTime < 0.35f) {
 			OffsetFromLine = Mathf.Lerp(pushedPosition, 0, (Time.time - startTime) / 0.25f);
-			transform.position = new Vector3(baseline + OffsetFromLine, transform.position.y);
+			paddle.transform.position = new Vector3(baseline + OffsetFromLine, transform.position.y, paddle.transform.position.z);
 			yield return wait;
 		}
 	}

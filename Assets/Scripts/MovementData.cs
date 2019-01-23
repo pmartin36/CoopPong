@@ -2,7 +2,7 @@
 using System.Collections;
 
 public class MovementData  {
-	public Vector2 Position { get; set; }
+	public Vector3 Position { get; set; }
 	public Vector3 MovementDirection { get; set; }
 	public float MoveSpeed { get; set; }
 
@@ -67,7 +67,7 @@ public class MovementData  {
 		Curve += Rotation / 200f * timestep;
 		Vector3 curveToAdd = IsCurving ? Curve * CurveDirection : Vector3.zero;
 
-		Vector2 delta = (MovementDirection * MoveSpeed + curveToAdd) * timestep;
+		Vector3 delta = (MovementDirection * MoveSpeed + curveToAdd) * timestep;
 
 		Position += delta;
 		ActualMoveSpeed = delta.magnitude;

@@ -22,8 +22,9 @@ public class LevelManager : ContextManager
 
 	public override void Awake() {
 		base.Awake();
-		float size = Camera.main.orthographicSize;
-		LevelPlayableMinMax = new MinMax(-size, size - 0.5f);
+		Camera c = Camera.main;
+		float size = c.orthographicSize; // TODO: Fix, don't use camera size - want to support something aside from 16:9?
+		LevelPlayableMinMax = new MinMax(-size + 0.5f, size); // TODO: Fix, don't hardcode
 	}
 
 	public override void Start() {

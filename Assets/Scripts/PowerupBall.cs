@@ -23,7 +23,7 @@ public class PowerupBall : BaseBall {
 	}
 
 	protected override void HandlePlayerCollision(float dot, Vector2 normal, RaycastHit2D hit, Vector3 lastMoveDirection) {
-		Player p = hit.collider.GetComponent<Player>();
+		Player p = hit.collider.GetComponentInParent<Player>();
 		// add powerup for player
 		p.AddPowerup(Powerup);
 		this.gameObject.Destroy();

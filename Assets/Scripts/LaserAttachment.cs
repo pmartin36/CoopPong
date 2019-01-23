@@ -6,8 +6,10 @@ public class LaserAttachment : MonoBehaviour
 {
 	public float Charge;
 	public LaserShot LaserShotPrefab;
-	private Player parentPlayer;
+	private Paddle parentPlayer;
 	private SpriteRenderer sr;
+
+	private PlayerSide Side;
 
 	private void Start() {
 		sr = GetComponent<SpriteRenderer>();
@@ -17,13 +19,14 @@ public class LaserAttachment : MonoBehaviour
 		Fire();
 	}
 
-	public void Init(Player p) {
+	public void Init(Paddle p, PlayerSide side) {
 		parentPlayer = p;
+		Side = side;
 	}
 
 	private void Fire() {
 		LaserShot ls = Instantiate(LaserShotPrefab, null);
-		if (parentPlayer.Side == PlayerSide.Left) {
+		if (Side == PlayerSide.Left) {
 			ls.transform.position = transform.position;
 			ls.Init(Vector3.right * 50f, parentPlayer.gameObject);
 		}

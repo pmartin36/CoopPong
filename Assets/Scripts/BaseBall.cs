@@ -33,13 +33,13 @@ public abstract class BaseBall : MonoBehaviour
 	protected virtual void SetBallRadius(float radius) {
 		ccollider = ccollider ?? GetComponent<CircleCollider2D>();
 		float scale = radius / ccollider.radius;
-		transform.localScale = new Vector2(scale, scale);
+		transform.localScale = new Vector3(scale, scale, scale);
 		ballRadius = radius;
 	}
 
 	public virtual void Start() {
 		ccollider = GetComponent<CircleCollider2D>();
-		SetBallRadius(0.25f);
+		SetBallRadius(0.275f);
 		playerLayermask = 1 << LayerMask.NameToLayer("Player");
 		collidableLayermask = 1 << LayerMask.NameToLayer("Collidable");
 		playerAndColliderLayermask = collidableLayermask | playerLayermask;

@@ -184,7 +184,7 @@ public class Ball : BaseBall
 	}
 
 	private void GenerateRandomPositionAndDirection() {
-		Vector3 position = new Vector2(0, Random.Range(-8f, 8f));
+		Vector3 position = new Vector3(0, Random.Range(-8f, 8f), -1);
 		while (Physics2D.OverlapCircle(position, ballRadius, collidableLayermask) != null) {
 			position = new Vector2(0, Random.Range(-8f, 8f));
 		}
@@ -243,8 +243,8 @@ public class Ball : BaseBall
 
 					if (closestLineHit.distance > ballRadius) {
 						MovementData lastMd = flightData[lastCollisionIndex];
-						Vector2 lastPosition = lastMd.Position;
-						float angle = Vector2.SignedAngle(md.Position - lastPosition, closestLineHit.point - lastPosition) * 1.25f;
+						Vector3 lastPosition = lastMd.Position;
+						float angle = Vector2.SignedAngle(md.Position - lastPosition, (Vector3)closestLineHit.point - lastPosition) * 1.25f;
 						if (Mathf.Abs(angle) < 15f) {
 							// adjust angle and recalculate
 							// remove all the points we've added since the last collision and reset md to that last collision point
@@ -299,13 +299,13 @@ public class Ball : BaseBall
 		//if (s.Length > 0) Debug.Log(s);
 
 		Vector3 lastPositionOfFlight = flightData.Last().Position;
-		if (Mathf.Abs(lastPositionOfFlight.x) > 16f) {
+		if (Mathf.Abs(lastPositionOfFlight.x) > Paddle.BaseLinePosition) {
 			var lm = GameManager.Instance.LevelManager;
 			Player targetedPlayer = lastPositionOfFlight.x < 0f ? lm.LeftPlayer : lm.RightPlayer;
 			if (!targetedPlayer.PlayerControlled) {
 				//Vector3 poi = flightData.FindLast(p => Mathf.Abs(p.Position.x) - 15.9f < 0.1f).Position;
 				Vector3 poi = flightData.Where(p => Mathf.Sign(p.Position.x * lastPositionOfFlight.x) > 0)
-										.OrderBy(p => Mathf.Abs(Mathf.Abs(p.Position.x) - 15.9f)).First().Position; // fix this double abs?
+										.OrderBy(p => Mathf.Abs(Mathf.Abs(p.Position.x) - Paddle.BaseLinePosition - 0.6f)).First().Position; // fix this double abs?
 				targetedPlayer.GoToLocation(poi.y);
 			}
 			if(!targetedPlayer.OtherPlayer.PlayerControlled) {

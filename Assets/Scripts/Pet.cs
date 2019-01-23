@@ -15,6 +15,7 @@ public class Pet: MonoBehaviour {
 	public CommandLocation Command { get; private set; }
 	public float Amount { get; set; }
 
+	private int numEffected;
 	private List<IButtonEffected> upEffected;
 	private List<IButtonEffected> downEffected;
 	private IButtonEffected currentEffected;
@@ -32,24 +33,37 @@ public class Pet: MonoBehaviour {
 	public void Start() {
 		mainCamera = Camera.main;
 		Target = new TargetPosRot(new Vector3(0, -12f), 90);
+		if (currentEffected != null) {
+			SetTarget();
+		}
 	}
 
 	public void Init(CommandLocation upCommand, CommandLocation downCommand, List<IButtonEffected> effected) {
 		upEffected = new List<IButtonEffected>();
 		downEffected = new List<IButtonEffected>();
 		foreach(var e in effected) {
-			if(e.IsEffectedByButtonLocation(upCommand)) {
+			bool up = e.IsEffectedByButtonLocation(upCommand);
+			bool down = e.IsEffectedByButtonLocation(downCommand);
+			if (up) {
 				upEffected.Add(e);
 			}
-			if (e.IsEffectedByButtonLocation(downCommand)) {
+			if (down) {
 				downEffected.Add(e);
 			}
 		}
 		defaultRotationSign = downCommand == CommandLocation.DownLeft ? -1f : 1f;
+
+		var activeEffected = effected.Where(g => g.GameObject.activeInHierarchy);
+		numEffected = activeEffected.Count();
+		if(numEffected == 1) {
+			Command = upCommand;
+			currentEffected = activeEffected.First();
+			currentEffected.AddActor(this, 0);
+		}
 	}
 
 	public void Update() {
-		if(timeSinceLastCommand > 5 && OnScreen) {
+		if(numEffected > 1 && timeSinceLastCommand > 5 && OnScreen) {
 			ClearCommand(true);
 		}
 
