@@ -138,14 +138,14 @@ public class Pet: MonoBehaviour {
 		Amount = 0;
 		if(flyOff) {
 			var sign = Mathf.Sign(transform.position.y);
-			Target.Position = new Vector2(transform.position.x, sign * 12);
+			Target.Position = new Vector3(transform.position.x, sign * 12, -2f);
 			Target.Rotation = sign * 90f;
 		}
 	}
 
 	public void SetTarget() {
-		currentEffected.OccupantTargetTransform(Command, transform, ref _target);
-		transform.position = new Vector2(Target.Position.x, transform.position.y);	
+		currentEffected?.OccupantTargetTransform(Command, transform, ref _target);
+		transform.position = new Vector3(Target.Position.x, transform.position.y, Target.Position.z);	
 	}
 
 	public void MoveFromPush(Vector3 moveAmount) {

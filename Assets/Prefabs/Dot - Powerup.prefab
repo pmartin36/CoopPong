@@ -13,6 +13,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   DotType: 0
+  ColorMultiplier: 1
   Powerup: {fileID: 0}
 --- !u!1001 &5522630098312112537
 PrefabInstance:
@@ -24,7 +25,7 @@ PrefabInstance:
     - target: {fileID: 2752443988712876442, guid: 14e6e32da17ccf2448e172e0a95ebc23,
         type: 3}
       propertyPath: m_Name
-      value: Normal Dot Variant
+      value: Dot - Powerup
       objectReference: {fileID: 0}
     - target: {fileID: 2752443988712876444, guid: 14e6e32da17ccf2448e172e0a95ebc23,
         type: 3}
@@ -89,17 +90,17 @@ PrefabInstance:
     - target: {fileID: 2752443989313260660, guid: 14e6e32da17ccf2448e172e0a95ebc23,
         type: 3}
       propertyPath: m_Color.r
-      value: 0.754717
+      value: 0.9245283
       objectReference: {fileID: 0}
     - target: {fileID: 2752443989313260660, guid: 14e6e32da17ccf2448e172e0a95ebc23,
         type: 3}
       propertyPath: m_Color.g
-      value: 0.754717
+      value: 0.9201673
       objectReference: {fileID: 0}
     - target: {fileID: 2752443989313260660, guid: 14e6e32da17ccf2448e172e0a95ebc23,
         type: 3}
       propertyPath: m_Color.b
-      value: 0.754717
+      value: 0.9201673
       objectReference: {fileID: 0}
     - target: {fileID: 4510036976596996076, guid: 14e6e32da17ccf2448e172e0a95ebc23,
         type: 3}

@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 3148514959626396174}
   - component: {fileID: 3148514959626396169}
   m_Layer: 0
-  m_Name: Extra Dot
+  m_Name: Dot - Golden (Base)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -161,3 +161,4 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   DotType: 2
+  ColorMultiplier: 1

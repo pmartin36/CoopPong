@@ -8,6 +8,9 @@ public abstract class BaseBall : MonoBehaviour
 {
 	public static float BaseSpeed = 8f;
 	public MovementData MovementData { get; protected set; }
+	public bool Inactive { get; set; }
+	public bool WaitingForHit { get; set; }
+
 	protected float ballRadius;
 	protected CircleCollider2D ccollider;
 
@@ -15,7 +18,7 @@ public abstract class BaseBall : MonoBehaviour
 	protected LayerMask playerLayermask;
 	protected LayerMask playerAndColliderLayermask;
 
-	protected Collider2D lastUpdateCollider = null;
+	protected Collider2D lastUpdateCollider = null;	
 
 	public float Rotation {
 		get
@@ -67,13 +70,43 @@ public abstract class BaseBall : MonoBehaviour
 				float msIncrease = hitBetweenLastMove.collider.GetComponent<IMoving>() != null ? 0f : 0.25f;
 				if (dot < 0) {
 					// Debug.Log($"Est - n: {normal}, d: {dot}, am: {actualMoveDirection} c: {ballHit.collider.gameObject.name}");
-					MovementData.HandleNonPlayerCollision(dot, normal, Vector3.zero, msIncrease, hitBetweenLastMove.centroid);
+					MovementData.HandleNonPlayerCollision(dot, normal, Vector3.zero, msIncrease, hitBetweenLastMove.centroid, !WaitingForHit);
 				}
 				lastUpdateCollider = hitBetweenLastMove.collider;
 			}
 		}
 
 		transform.position = MovementData.Position;
+	}
+
+	public void WaitingForHitMovement() {
+		var lastMovement = new MovementData(MovementData);
+		MovementData.Update(Time.fixedDeltaTime);
+
+		transform.Rotate(0, 0, Rotation * Time.fixedDeltaTime);
+		RaycastHit2D hitBetweenLastMove = Physics2D.CircleCastAll(transform.position, ballRadius,
+			lastMovement.ActualMovementDirection, lastMovement.ActualMoveSpeed, playerAndColliderLayermask).FirstOrDefault(h => h.collider != lastUpdateCollider);
+
+		if (hitBetweenLastMove.collider != null) {
+			Vector2 actualMoveDirection = lastMovement.ActualMovementDirection;
+			Vector2 normal = hitBetweenLastMove.normal;
+			float dot = Vector2.Dot(actualMoveDirection, normal);
+
+			if (hitBetweenLastMove.collider.CompareTag("Player")) {
+				MovementData = new MovementData(transform.position);
+				HandlePlayerCollision(-1, Vector3.right, hitBetweenLastMove, Vector3.zero);
+			}
+			else {
+				if (dot < 0) {
+					MovementData.HandleNonPlayerCollision(dot, normal, Vector3.zero, 0, hitBetweenLastMove.centroid, !WaitingForHit);
+				}
+				lastUpdateCollider = hitBetweenLastMove.collider;
+			}
+			transform.position = MovementData.Position;
+		}
+		else {
+			transform.position += lastMovement.MovementDirection * lastMovement.MoveSpeed * Time.fixedDeltaTime;
+		}		
 	}
 
 	protected IEnumerator ChangeBallSize(float target, float time = 1f, YieldInstruction yield = null) {

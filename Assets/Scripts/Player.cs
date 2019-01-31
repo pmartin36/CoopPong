@@ -26,7 +26,7 @@ public class Player : MonoBehaviour
 
 	public float BaseSpeed;
 	public float Width { get; private set; }
-	public float BodyWidth { get => Width - 1.085f; }
+	public float BodyWidth { get => HalfLength - 0.27125f; }
 	public float HalfLength { get => Width / 2f; }
 
 	public bool IsSlowed { get; private set; }
@@ -70,7 +70,7 @@ public class Player : MonoBehaviour
 
 	public float OffsetFromLine;
 	public Ball LastBallInteractedWith { get; private set; }
-	public bool CanPerformActions { get => InPlay && LastBallInteractedWith != null && !LastBallInteractedWith.Stopped; }
+	public bool CanPerformActions { get => InPlay && LastBallInteractedWith != null && !(LastBallInteractedWith.WaitingForHit && LastBallInteractedWith.Inactive); }
 
 	[SerializeField]
 	private List<GameObject> EffectedGameObjects;
@@ -78,6 +78,10 @@ public class Player : MonoBehaviour
 
 	[SerializeField]
 	private Pet Pet;
+
+	[SerializeField]
+	private GameObject spareBall;
+	public bool HasSpareBall { get => spareBall != null; }
 
 	private CommandLocation UpCommand { get; set; }
 	private CommandLocation DownCommand { get; set; }
@@ -190,15 +194,17 @@ public class Player : MonoBehaviour
 		}
 	}
 
-	public void HandleInput(float vertical, bool launch, bool button1, bool button2) {
+	public void HandleInput(float vertical, bool launchInput, bool button1, bool button2) {
 		verticalInput = vertical;
 		if(PlayerControlled) {
 			buttonDown = button2;
-			if (buttonDown && CanPerformActions) {
+			if (buttonDown) {
 				IsControlling = true;
 				if(RemoteControlActive) {
 					Pet.SetCommand(CommandLocation.None, 0);
-					RemoteControl.HandleInput(vertical);
+					if (CanPerformActions) {					
+						RemoteControl.HandleInput(vertical);
+					}
 				}
 				else {
 					var vertAbs = Mathf.Abs(vertical);
@@ -222,9 +228,9 @@ public class Player : MonoBehaviour
 				IsControlling = false;
 				targetMoveSpeed = vertical * MaxMoveSpeed * MovespeedSlow;
 
-				if(LastBallInteractedWith != null && LastBallInteractedWith.Stopped && launch && OffsetFromLine < 0.01f) {
+				if(LastBallInteractedWith != null && paddle.capsuleCollider.enabled && LastBallInteractedWith.WaitingForHit && launchInput && OffsetFromLine < 0.01f) {
 					// allow push out
-					StartCoroutine(PushBall());
+					StartCoroutine(PushPaddle());
 				}
 
 				if (button1) {
@@ -248,9 +254,31 @@ public class Player : MonoBehaviour
 		MaxMoveSpeed = BaseSpeed;
 	}
 
-	public void PlaceBall(Ball b) {
+	public void PlaceBall(Ball b, bool usingSpareBall) {
 		LastBallInteractedWith = b;
-		b.transform.position = paddle.transform.position + new Vector3(Side == PlayerSide.Left ? 1f : -1f, 0);
+		if (usingSpareBall) {
+			b.WaitingForHit = true;
+			b.Inactive = true;
+			PushBallOut();
+		}
+		else {
+			b.transform.position = paddle.transform.position + new Vector3(Side == PlayerSide.Left ? 1f : -1f, 0);
+		}	
+	}
+
+	public void PushBallOut() {
+		LastBallInteractedWith.transform.position = spareBall.transform.position;
+		LastBallInteractedWith.transform.rotation = spareBall.transform.rotation;
+
+		paddle.capsuleCollider.enabled = false;
+
+		StartCoroutine(LastBallInteractedWith.PushBallToStart(
+			paddle.transform.position.x + (Side == PlayerSide.Left ? 1f : -1f),
+			0.4f,
+			() => paddle.capsuleCollider.enabled = true));
+
+		this.spareBall.Destroy();
+		this.spareBall = null;
 	}
 
 	public Vector3 GetBallTrajectory(Ball b, Vector3 point, Vector3 incoming) {
@@ -298,8 +326,10 @@ public class Player : MonoBehaviour
 			//0.5425 = height of end caps
 			Width = (bodyWidth + 0.5425f / 2f) * 2;
 
-			MinMax levelMinMax = GameManager.Instance.LevelManager.LevelPlayableMinMax;
-			MovementRange = new MinMax(levelMinMax.Min + HalfLength, levelMinMax.Max - HalfLength);
+			if(GameManager.Instance.LevelManager?.LevelPlayableMinMax != null) {
+				MinMax levelMinMax = GameManager.Instance.LevelManager.LevelPlayableMinMax;
+				MovementRange = new MinMax(levelMinMax.Min + HalfLength, levelMinMax.Max - HalfLength);
+			}
 
 			paddle.SetWidth(Width, bodyWidth);
 		}
@@ -339,7 +369,7 @@ public class Player : MonoBehaviour
 
 		switch (effector.Effect) {
 			case StatusEffect.Shrunk:
-				SetBodyWidth( BodyWidth - 0.5f );
+				SetBodyWidth( BodyWidth - 0.35f );
 				break;
 			case StatusEffect.Jailed:
 				MinMax levelMinMax = GameManager.Instance.LevelManager.LevelPlayableMinMax;
@@ -361,7 +391,7 @@ public class Player : MonoBehaviour
 
 		switch (effectRemoved) {
 			case StatusEffect.Shrunk:
-				SetBodyWidth(BodyWidth + 0.5f);
+				SetBodyWidth(BodyWidth + 0.35f);
 				break;
 			case StatusEffect.Jailed:
 				if(GameManager.Instance?.LevelManager?.LevelPlayableMinMax != null) {
@@ -376,8 +406,8 @@ public class Player : MonoBehaviour
 		}
 	}
 
-	public void Hit(Vector3 position) {
-		if(!LastBallInteractedWith.Stopped) {
+	public void HitByLaser(Vector3 position) {
+		if(GameManager.Instance.LevelManager.NumActiveBalls == 0 || !LastBallInteractedWith.WaitingForHit) {
 			IsSlowed = false;
 			SetInPlay(false);
 
@@ -392,7 +422,7 @@ public class Player : MonoBehaviour
 				CpuOffsetPlacement = forcedMovementLocation.Value;
 				CpuReachedBasePlacement = false;
 			}
-			StartCoroutine(JumpFromLaser());
+			StartCoroutine(HitByLaserAction());
 		}
 	}
 
@@ -407,7 +437,7 @@ public class Player : MonoBehaviour
 		IsSlowed = false;
 	}
 
-	private IEnumerator JumpFromLaser() {
+	private IEnumerator HitByLaserAction() {
 		float startTime = Time.time;
 		float start = transform.position.y;
 		float end = forcedMovementLocation.Value;
@@ -417,9 +447,14 @@ public class Player : MonoBehaviour
 			yield return wait;
 		}
 		forcedMovementLocation = null;
+
+		yield return new WaitForSeconds(10f);
+		if(!InPlay) {
+			SetInPlay(true);
+		}
 	}
 
-	private IEnumerator PushBall() {
+	private IEnumerator PushPaddle() {
 		float startTime = Time.time;
 		float pushedPosition = Side == PlayerSide.Right ? -1f : 1f;
 		float baseline = Paddle.BaseLinePosition * (Side == PlayerSide.Left ? -1f : 1f);

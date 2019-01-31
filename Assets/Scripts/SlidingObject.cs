@@ -18,14 +18,6 @@ public class SlidingObject : MonoBehaviour, IMoving {
 	public float Speed;
 	protected Vector3 TrackDirection;
 
-	public void Move(float diff) {
-		var pos = ObjectOnTrack.transform.localPosition.y + diff;
-		pos = Mathf.Clamp(pos, Range.Min, Range.Max);
-		ObjectOnTrack.transform.localPosition = TrackDirection * pos;
-
-		LastFramePosition = ObjectOnTrack.transform.localPosition;
-	}
-
 	public virtual void Start() {
 		float r = Track.localScale.x / 2f;
 		Range = new MinMax(-r, r);
@@ -38,6 +30,21 @@ public class SlidingObject : MonoBehaviour, IMoving {
 		if (newPosition >= Range.Max || newPosition <= Range.Min) {
 			Direction *= -1f;
 		}
+	}
+
+	public void Move(float diff) {
+		Vector3 diffFromCenter = ObjectOnTrack.transform.position - Track.position;
+
+		float pushDirection = Mathf.Sign(diff);
+		float positionDirection = Mathf.Sign(Vector3.Dot(diffFromCenter, TrackDirection));
+
+		float distFromCenter = diffFromCenter.magnitude;
+		if(Mathf.Abs(positionDirection * distFromCenter + diff) > Range.Max) {
+			diff = pushDirection * (Range.Max - distFromCenter);
+		}
+
+		ObjectOnTrack.transform.localPosition += TrackDirection * diff;
+		LastFramePosition = ObjectOnTrack.transform.localPosition;
 	}
 
 	public Vector3 GetMovementAmount(Vector3 position) {

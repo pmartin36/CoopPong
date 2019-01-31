@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -20,11 +21,23 @@ public class LevelManager : ContextManager
 
 	public bool IsSlowMode { get; private set; }
 
+	public int RemainingLives;
+	public static event EventHandler<int> RemainingLivesChanged;	
+
+	[SerializeField]
+	private GameObject Floor;
+	[SerializeField]
+	private GameObject Ceiling;
+
 	public override void Awake() {
 		base.Awake();
 		Camera c = Camera.main;
-		float size = c.orthographicSize; // TODO: Fix, don't use camera size - want to support something aside from 16:9?
-		LevelPlayableMinMax = new MinMax(-size + 0.5f, size); // TODO: Fix, don't hardcode
+
+		//float size = c.orthographicSize; // TODO: Fix, don't use camera size - want to support something aside from 16:9?
+		//LevelPlayableMinMax = new MinMax(-size + 0.5f, size); // TODO: Fix, don't hardcode
+
+		Bounds box = Floor.GetComponent<BoxCollider2D>().bounds;
+		LevelPlayableMinMax = new MinMax(box.min.y, box.max.y);
 	}
 
 	public override void Start() {
@@ -37,10 +50,12 @@ public class LevelManager : ContextManager
 		if(!RightPlayer.PlayerControlled) {
 			CpuControlledPlayers.Add(RightPlayer);
 		}	
+
+		SetRemainingLives(3);
 	}
 
 	public void Update() {
-		// Spawner.Update(Time.deltaTime);
+		
 	}
 
 	public override void HandleInput(InputPackage p) {
@@ -72,11 +87,31 @@ public class LevelManager : ContextManager
 	}
 
 	public void PlayerLifeLost(Ball ball) {
-		LeftPlayer.SetInPlay(true);
-		RightPlayer.SetInPlay(true);
+		SetRemainingLives(RemainingLives - 1);
+
+		if(RemainingLives <= 0) {
+			StartCoroutine(ExecuteDelayedAction(() => GameManager.Instance.ReloadLevel(), 1.2f));
+		}
+		else {
+			// must come before or collider disable gets overriden
+			LeftPlayer.SetInPlay(true);
+			RightPlayer.SetInPlay(true);
+
+			ball.SelectPlayerAndDropBall(false, true);		
+		}
+	}
+
+	private void SetRemainingLives(int lives) {
+		RemainingLives = lives;
+		RemainingLivesChanged?.Invoke(this, RemainingLives);
 	}
 
 	public void LateUpdate() {
 		
+	}
+
+	public IEnumerator ExecuteDelayedAction( Action action, float delay ) {
+		yield return new WaitForSeconds(delay);
+		action();
 	}
 }

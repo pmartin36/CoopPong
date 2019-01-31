@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -16,8 +17,6 @@ public class Ball : BaseBall
 
 	private AimAssist AimAssist;
 	private bool aimAssistNeeded = true;
-
-	public bool Stopped { get; set; }
 
 	public bool RemoteControlled { get; set; }
 	public List<Player> CpuControlledPlayers {
@@ -38,21 +37,21 @@ public class Ball : BaseBall
     {
 		base.Start();
 		targetLayermask = 1 << LayerMask.NameToLayer("Target");
-		Stopped = true;
+		WaitingForHit = true;
+		Inactive = false;
 		SelectPlayerAndDropBall(true);
 	}
 
     // Update is called once per frame
     public override void FixedUpdate()
     {
-		if (Stopped) {
-			hitBetweenLastMove = Physics2D.CircleCast(transform.position, ballRadius, Vector3.zero, 0, playerLayermask);
-			if (hitBetweenLastMove.collider != null) {
-				MovementData = new MovementData(transform.position);
-				HandlePlayerCollision(-1, Vector3.right, hitBetweenLastMove, Vector3.zero);
-			}
+		if(Inactive) {
+			return;
 		}
-		else if (projectedFlight != null && projectedFlight.Count > projectedFlightIndex - 1) {
+		else if (WaitingForHit) {
+			WaitingForHitMovement();
+		}
+		else if (projectedFlight != null && projectedFlight.Count - 1 > projectedFlightIndex) {
 			lastMovement = projectedFlight[projectedFlightIndex];
 			Vector3 lastMoveDirection = lastMovement.ActualMovementDirection;
 
@@ -113,7 +112,7 @@ public class Ball : BaseBall
 				MovementData.HandleNonPlayerCollision(dot, normal, diff, 0f, hitBetweenLastMove.centroid);
 			}
 			else {
-				MovementData.HandleNonPlayerCollision(dot, normal, extra, 0.25f, hitBetweenLastMove.centroid);
+				MovementData.HandleNonPlayerCollision(dot, normal, extra, WaitingForHit ? 0f : 0.25f, hitBetweenLastMove.centroid);
 			}
 
 			projectedFlight = GetFlightPath(collider, AimAssist);
@@ -132,8 +131,8 @@ public class Ball : BaseBall
 			Vector3 point = hit.point;
 			MovementData.MovementDirection = player.GetBallTrajectory(this, point, lastMoveDirection);
 
-			if(Stopped) {
-				Stopped = false;
+			if(WaitingForHit) {
+				WaitingForHit = false;
 				MovementData.MoveSpeed = BaseSpeed;
 				GameManager.Instance.LevelManager.NumActiveBalls++;
 			}
@@ -160,7 +159,7 @@ public class Ball : BaseBall
 		}
 	}
 
-	private void SelectPlayerAndDropBall(bool randomPlayer) {
+	public void SelectPlayerAndDropBall(bool randomPlayer, bool usingSpareBall = false) {
 		PlayerSide pSide;
 		if(randomPlayer) {
 			var cpuPlayers = CpuControlledPlayers;
@@ -169,7 +168,7 @@ public class Ball : BaseBall
 				pSide = cpuPlayers[0].Side == PlayerSide.Right ? PlayerSide.Left : PlayerSide.Right; 
 			}
 			else {
-				pSide = (PlayerSide)Random.Range(0,2);
+				pSide = (PlayerSide)UnityEngine.Random.Range(0,2);
 			}
 		}
 		else {
@@ -177,21 +176,29 @@ public class Ball : BaseBall
 		}
 
 		GameManager.Instance.LevelManager.NumActiveBalls--;
-		Stopped = true;
+		WaitingForHit = true;
 
 		Player player = pSide == PlayerSide.Right ? GameManager.Instance.LevelManager.RightPlayer : GameManager.Instance.LevelManager.LeftPlayer;
-		player.PlaceBall(this);
+		player = player.HasSpareBall ? player : player.OtherPlayer;
+		player.PlaceBall(this, usingSpareBall);
+
+		MovementData = new MovementData(
+			transform.position,
+			UnityEngine.Random.value > 0.5f ? Vector3.up : Vector3.down,
+			BaseBall.BaseSpeed / 2.5f,
+			0, 0, Vector3.zero, false
+		);
 	}
 
 	private void GenerateRandomPositionAndDirection() {
-		Vector3 position = new Vector3(0, Random.Range(-8f, 8f), -1);
+		Vector3 position = new Vector3(0, UnityEngine.Random.Range(-8f, 8f), -1);
 		while (Physics2D.OverlapCircle(position, ballRadius, collidableLayermask) != null) {
-			position = new Vector2(0, Random.Range(-8f, 8f));
+			position = new Vector2(0, UnityEngine.Random.Range(-8f, 8f));
 		}
 
 		MovementData = new MovementData(
 			position: position,
-			movementDirection: new Vector2(Random.Range(0.5f, 1f), Random.Range(-0.4f, 0.4f)).normalized,
+			movementDirection: new Vector2(UnityEngine.Random.Range(0.5f, 1f), UnityEngine.Random.Range(-0.4f, 0.4f)).normalized,
 			moveSpeed: BaseSpeed,
 			rotation: 0,
 			curve: 0,
@@ -309,7 +316,7 @@ public class Ball : BaseBall
 				targetedPlayer.GoToLocation(poi.y);
 			}
 			if(!targetedPlayer.OtherPlayer.PlayerControlled) {
-				Vector3 poi = new Vector3(targetedPlayer.OtherPlayer.transform.position.x, Random.Range(-1f, 1f));
+				Vector3 poi = new Vector3(targetedPlayer.OtherPlayer.transform.position.x, UnityEngine.Random.Range(-1f, 1f));
 				targetedPlayer.OtherPlayer.GoToLocation(poi.y);
 			}
 		}
@@ -343,7 +350,6 @@ public class Ball : BaseBall
 	public void OnTriggerEnter2D(Collider2D collision) {
 		if (collision.CompareTag("ScoreZone")) {
 			GameManager.Instance.LevelManager.PlayerLifeLost(this);
-			SelectPlayerAndDropBall(false);
 		}
 	}
 
@@ -351,5 +357,31 @@ public class Ball : BaseBall
 		GraduateBallSize(0.5f);
 		yield return new WaitForSeconds(1 * 60f);
 		GraduateBallSize(0.25f);
+	}
+
+	public IEnumerator PushBallToStart(float destX, float activateTime, Action completeCallback) {
+		float time = 0;
+		float start = transform.position.x;
+		float direction = Mathf.Sign(destX - start);
+		var wait = new WaitForEndOfFrame();
+		while( true ) {		
+			if(Inactive && time > activateTime) {
+				Inactive = false;
+			}
+
+			float dist = (destX - transform.position.x);
+			float diff = dist * 2f * Time.deltaTime;
+			if (Mathf.Abs(dist) < 0.1f) {
+				break;
+			}
+			else {
+				transform.position += Vector3.right * diff;
+			}
+
+			time += Time.deltaTime;
+			yield return wait;
+		}
+
+		completeCallback?.Invoke();
 	}
 }

@@ -7,8 +7,6 @@ public class SmallEnemy : BaseEnemy, IEffector {
 
 	public event EventHandler Destroyed;
 
-	private Player targetedPlayer;
-
 	public void OnEnable() {
 		Spawning = true;
 		SelectTarget();
@@ -21,18 +19,15 @@ public class SmallEnemy : BaseEnemy, IEffector {
 	}
 
 	public void SelectTarget() {
-		var levelManager = GameManager.Instance.LevelManager;
-		targetedPlayer = UnityEngine.Random.value > 0.5f ? levelManager.RightPlayer : levelManager.LeftPlayer;
-		// target the computer if possible
-		if (!targetedPlayer.OtherPlayer.PlayerControlled) {
-			targetedPlayer = targetedPlayer.OtherPlayer;
-		}
+		
 	}
 
 	private void SpawnComplete() {
 		Spawning = false;
 		gameObject.layer = LayerMask.NameToLayer("Target");
-		targetedPlayer.AddStatusEffect(this);
+		var lm = GameManager.Instance.LevelManager;
+		lm.RightPlayer.AddStatusEffect(this);
+		lm.LeftPlayer.AddStatusEffect(this);
 	}
 
 	public void OnDestroy() {

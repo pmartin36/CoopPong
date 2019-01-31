@@ -9,7 +9,7 @@ public class Paddle : MonoBehaviour
 	private PlayerSide Side;
 	private float LinePosition;
 
-	private CapsuleCollider2D capsuleCollider;
+	public CapsuleCollider2D capsuleCollider;
 	private SpriteRenderer[] spriteRenderers;
 	private Transform body;
 	private Transform topCap;

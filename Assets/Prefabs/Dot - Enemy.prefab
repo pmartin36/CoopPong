@@ -13,7 +13,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   DotType: 3
-  Enemy: {fileID: 0}
+  ColorMultiplier: 1
+  Enemies: []
 --- !u!1001 &8249640996185249750
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -24,7 +25,7 @@ PrefabInstance:
     - target: {fileID: 7680598798663794691, guid: bf3aa4ce9882a1c4691cb404266b90ab,
         type: 3}
       propertyPath: m_Name
-      value: Enemy Dot Variant
+      value: Dot - Enemy
       objectReference: {fileID: 0}
     - target: {fileID: 7680598798663794693, guid: bf3aa4ce9882a1c4691cb404266b90ab,
         type: 3}

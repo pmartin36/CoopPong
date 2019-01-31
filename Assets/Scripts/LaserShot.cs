@@ -34,7 +34,7 @@ public class LaserShot : MonoBehaviour
 			string tag = hit.collider.gameObject.tag;
 			if (tag == "Player") {
 				Player p = hit.collider.GetComponentInParent<Player>();
-				p.Hit(hit.point);
+				p.HitByLaser(hit.point);
 			}
 			else if(CanCollectOrDestroy) {
 				if(tag == "Enemy") {
@@ -56,6 +56,8 @@ public class LaserShot : MonoBehaviour
 	}
 
 	private void OnDestroy() {
-		tr.transform.parent = null;
+		if(tr != null) {
+			tr.transform.parent = null;
+		}
 	}
 }

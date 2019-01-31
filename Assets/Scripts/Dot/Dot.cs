@@ -3,26 +3,48 @@ using System.Collections.Generic;
 using UnityEngine;
 
 public enum DotType {
-	Normal,
+	Powerup,
 	Required,
-	Extra,
+	Golden,
 	Enemy
 }
 
 public class Dot : MonoBehaviour
 {
 	public DotType DotType;
+	public float ColorMultiplier;
 
-    // Start is called before the first frame update
-    void Start()
-    {
-        
-    }
+	protected Color color;
+	protected SpriteRenderer sr;
 
-    // Update is called once per frame
+	protected Animator anim;
+
+    public virtual void Start() {
+		sr = GetComponent<SpriteRenderer>();
+		switch (DotType) {
+			case DotType.Powerup:
+				color = Color.white;
+				break;
+			case DotType.Required:
+				color = Color.green;
+				break;
+			case DotType.Golden:
+				color = new Color(1, 0.97f, 0.4f);
+				break;
+			case DotType.Enemy:
+				color = Color.red;
+				break;
+			default:
+				break;
+		}
+
+		anim = GetComponentInParent<Animator>();
+		StartCoroutine(StartAnimationAfterDelay());
+	}
+
     void Update()
     {
-        
+        sr.color = color * ColorMultiplier;
     }
 
 	public void TryDestroy(GameObject collision) {
@@ -35,11 +57,11 @@ public class Dot : MonoBehaviour
 			case DotType.Required:
 				// remove from required
 				break;
-			case DotType.Extra:
+			case DotType.Golden:
 				// award bonus star
 				break;
 			case DotType.Enemy: // spawn enemy
-			case DotType.Normal: // chance to drop powerup
+			case DotType.Powerup: // chance to drop powerup
 				// handled in derived classes
 				break;
 		}
@@ -49,5 +71,10 @@ public class Dot : MonoBehaviour
 		if(collision.CompareTag("Ball")) {
 			TryDestroy(collision.gameObject);
 		}
+	}
+
+	IEnumerator StartAnimationAfterDelay() {
+		yield return new WaitForSeconds(Random.value);
+		anim.Play("Dot");
 	}
 }

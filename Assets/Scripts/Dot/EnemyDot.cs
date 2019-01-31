@@ -6,7 +6,8 @@ public class EnemyDot : Dot
 {
 	public Transform[] Enemies;
 
-	public void Start() {
+	public override void Start() {
+		base.Start();
 		Enemies = GetComponentsInChildren<Transform>(true);
 	}
 

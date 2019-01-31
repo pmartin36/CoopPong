@@ -100,10 +100,10 @@ public class MovementData  {
 		}
 	}
 
-	public void HandleNonPlayerCollision(float dot, Vector3 normal, Vector3 extraMovement, float msIncrease = 0.25f, Vector3? surfaceData = null) {
+	public void HandleNonPlayerCollision(float dot, Vector3 normal, Vector3 extraMovement, float msIncrease = 0.25f, Vector3? surfaceData = null, bool enforceXMovement = true) {
 		float extraMs = extraMovement.magnitude;
 		MovementDirection = ((ActualMovementDirection - 2 * dot * normal) * ActualMoveSpeed + (extraMovement * extraMs)).normalized;
-		if (Mathf.Abs(MovementDirection.x) < 0.25f) {
+		if (enforceXMovement && Mathf.Abs(MovementDirection.x) < 0.25f) {
 			MovementDirection = (MovementDirection + Mathf.Sign(Position.x) * Vector3.left).normalized;
 		}
 		CalculateCurve();
