@@ -24,6 +24,8 @@ public class Player : MonoBehaviour
 	private Paddle paddle;
 	private Character character;
 
+	private bool disabledInputs;
+
 	public float BaseSpeed;
 	public float Width { get; private set; }
 	public float BodyWidth { get => HalfLength - 0.27125f; }
@@ -183,7 +185,7 @@ public class Player : MonoBehaviour
 				}
 			}
 			else {
-				targetDelta *= 2.5f; // non-pips out can move at 2.5x speed
+				targetDelta *= 1.8f; // non-pips out can move at 1.8x speed
 				bool slowingDown = Mathf.Abs(targetDelta) < Mathf.Abs(lastFrameMoveSpeed);
 				targetDelta = Mathf.SmoothDamp(lastFrameMoveSpeed, targetDelta, ref lastFrameAcceleration, slowingDown ? 0.3f : 0.2f);
 			}
@@ -196,7 +198,7 @@ public class Player : MonoBehaviour
 
 	public void HandleInput(float vertical, bool launchInput, bool button1, bool button2) {
 		verticalInput = vertical;
-		if(PlayerControlled) {
+		if(PlayerControlled && !disabledInputs) {
 			buttonDown = button2;
 			if (buttonDown) {
 				IsControlling = true;
@@ -210,8 +212,8 @@ public class Player : MonoBehaviour
 					var vertAbs = Mathf.Abs(vertical);
 					foreach (IButtonEffected e in Effected) {
 						if (vertical > 0.1f) {
-							Pet.SetCommand(UpCommand, vertAbs);
 							// e.AddActor(UpCommand, vertAbs);
+							Pet.SetCommand(UpCommand, vertAbs);
 						}
 						else if (vertical < -0.1f) {
 							Pet.SetCommand(DownCommand, vertAbs);
@@ -224,7 +226,7 @@ public class Player : MonoBehaviour
 				}
 			}
 			else {
-				Pet.SetCommand(CommandLocation.None, 0);
+				Pet.Amount = 0;
 				IsControlling = false;
 				targetMoveSpeed = vertical * MaxMoveSpeed * MovespeedSlow;
 
@@ -304,7 +306,7 @@ public class Player : MonoBehaviour
 	}
 
 	public float GetMSDelta(Vector3 point, Vector3 incoming) {
-		return (pipsOut && !LaserActive) ? -0.1f : 0.25f;
+		return (pipsOut && !LaserActive) ? 0.1f : 0.4f;
 	}
 
 	public void GoToLocation(float py) {
@@ -313,6 +315,26 @@ public class Player : MonoBehaviour
 
 		float range = Width * 0.475f;
 		CpuOffsetPlacement = CpuBasePlacement + UnityEngine.Random.Range(-range, range );
+	}
+
+	public void CeilingSwitchStart() {
+		disabledInputs = true;
+		paddle.capsuleCollider.enabled = false;
+		Pet.SetCommand(CommandLocation.None, 0);
+	}
+
+	public void CeilingSwitchEnd() {
+		disabledInputs = false;	
+		paddle.capsuleCollider.enabled = true;
+		SetMinMax();
+		Pet.Init(UpCommand, DownCommand, Effected);
+	}
+
+	public void SetMinMax() {
+		if (GameManager.Instance.LevelManager?.LevelPlayableMinMax != null) {
+			MinMax levelMinMax = GameManager.Instance.LevelManager.LevelPlayableMinMax;
+			MovementRange = new MinMax(levelMinMax.Min + HalfLength, levelMinMax.Max - HalfLength);
+		}
 	}
 
 	public void SetBodyWidth(float bodyWidth, bool animate = true) {
@@ -325,12 +347,7 @@ public class Player : MonoBehaviour
 		else {		
 			//0.5425 = height of end caps
 			Width = (bodyWidth + 0.5425f / 2f) * 2;
-
-			if(GameManager.Instance.LevelManager?.LevelPlayableMinMax != null) {
-				MinMax levelMinMax = GameManager.Instance.LevelManager.LevelPlayableMinMax;
-				MovementRange = new MinMax(levelMinMax.Min + HalfLength, levelMinMax.Max - HalfLength);
-			}
-
+			SetMinMax();
 			paddle.SetWidth(Width, bodyWidth);
 		}
 	}

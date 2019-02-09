@@ -28,11 +28,14 @@ public class Pet: MonoBehaviour {
 			return viewportPosition.y <= 1 || viewportPosition.y >= 0;
 		}
 	}
-	
 
-	public void Start() {
+
+	public void Awake() {
 		mainCamera = Camera.main;
 		Target = new TargetPosRot(new Vector3(0, -12f), 90);
+	}
+
+	public void Start() {
 		if (currentEffected != null) {
 			SetTarget();
 		}
@@ -42,21 +45,28 @@ public class Pet: MonoBehaviour {
 		upEffected = new List<IButtonEffected>();
 		downEffected = new List<IButtonEffected>();
 		foreach(var e in effected) {
-			bool up = e.IsEffectedByButtonLocation(upCommand);
-			bool down = e.IsEffectedByButtonLocation(downCommand);
-			if (up) {
-				upEffected.Add(e);
-			}
-			if (down) {
-				downEffected.Add(e);
+			// avoid stupid null state after switching to ceiling
+			if(!e.Equals(null)) {
+				bool up = e.IsEffectedByButtonLocation(upCommand);
+				bool down = e.IsEffectedByButtonLocation(downCommand);
+				if (up) {
+					upEffected.Add(e);
+				}
+				if (down) {
+					downEffected.Add(e);
+				}
 			}
 		}
 		defaultRotationSign = downCommand == CommandLocation.DownLeft ? -1f : 1f;
 
-		var activeEffected = effected.Where(g => g.GameObject.activeInHierarchy);
+		SetDefaultEffected(effected, downEffected.Count > 0 ? downCommand : upCommand);
+	}
+
+	public void SetDefaultEffected(List<IButtonEffected> effected, CommandLocation defCommmand) {
+		var activeEffected = effected.Where(g => !g.Equals(null) && g.GameObject.activeInHierarchy);
 		numEffected = activeEffected.Count();
-		if(numEffected == 1) {
-			Command = upCommand;
+		if (numEffected == 1) {
+			Command = defCommmand;
 			currentEffected = activeEffected.First();
 			currentEffected.AddActor(this, 0);
 		}
@@ -88,7 +98,7 @@ public class Pet: MonoBehaviour {
 		transform.position += distToMove * direction;
 
 
-		// TODO: Make them rotate on opposite sides
+		// TODO: Make each pet rotate different directions
 		float targetAngle = distToTarget < 2f ? Target.Rotation : Utils.VectorToAngle(direction);
 		targetAngle = (targetAngle + 360) % 360;
 		float currentAngle = (transform.rotation.eulerAngles.z + 360) % 360;
@@ -116,16 +126,16 @@ public class Pet: MonoBehaviour {
 		}
 		else {
 			if(Command != bl) {
+				Command = bl;
 				var tempEffected = currentEffected;
 				currentEffected = (bl == CommandLocation.UpLeft || bl == CommandLocation.UpRight ? upEffected : downEffected)
-					.FirstOrDefault(e => e.GameObject.activeInHierarchy);
+					.FirstOrDefault(e => !e.Equals(null) && e.GameObject.activeInHierarchy);
 				if(tempEffected != null && tempEffected != currentEffected) {
 					tempEffected.RemoveActor(this);
 				}
 				SetTarget();
 			}
-			Amount = amount;
-			Command = bl;
+			Amount = amount;	
 			timeSinceLastCommand = 0;
 		}
 		

@@ -7,6 +7,7 @@ public class NormalDot : Dot
 	public PowerupBall Powerup;
 
 	public override void OnDestroyEffect(GameObject collider) {
+		base.OnDestroyEffect(collider);
 		// drop powerup
 		Powerup.transform.parent = null;
 		Powerup.gameObject.SetActive(true);

@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -26,6 +27,7 @@ public class Dot : MonoBehaviour
 				color = Color.white;
 				break;
 			case DotType.Required:
+				GameManager.Instance.LevelManager.AddRequiredDot();
 				color = Color.green;
 				break;
 			case DotType.Golden:
@@ -37,7 +39,6 @@ public class Dot : MonoBehaviour
 			default:
 				break;
 		}
-
 		anim = GetComponentInParent<Animator>();
 		StartCoroutine(StartAnimationAfterDelay());
 	}
@@ -53,18 +54,11 @@ public class Dot : MonoBehaviour
 	}
 
 	public virtual void OnDestroyEffect(GameObject collision) {
-		switch (DotType) {		
-			case DotType.Required:
-				// remove from required
-				break;
-			case DotType.Golden:
-				// award bonus star
-				break;
-			case DotType.Enemy: // spawn enemy
-			case DotType.Powerup: // chance to drop powerup
-				// handled in derived classes
-				break;
-		}
+		GameManager.Instance.LevelManager.DotCollected(this.DotType);
+	}
+
+	private void OnDestroy() {
+		
 	}
 
 	private void OnTriggerEnter2D(Collider2D collision) {
@@ -74,7 +68,7 @@ public class Dot : MonoBehaviour
 	}
 
 	IEnumerator StartAnimationAfterDelay() {
-		yield return new WaitForSeconds(Random.value);
+		yield return new WaitForSeconds(UnityEngine.Random.value);
 		anim.Play("Dot");
 	}
 }

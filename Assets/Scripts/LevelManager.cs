@@ -15,29 +15,30 @@ public class LevelManager : ContextManager
 
 	public readonly List<Player> CpuControlledPlayers = new List<Player>();
 
-	public SpawnExport SpawnDataAsset;
-
-	public MinMax LevelPlayableMinMax;
-
 	public bool IsSlowMode { get; private set; }
 
 	public int RemainingLives;
 	public static event EventHandler<int> RemainingLivesChanged;	
 
-	[SerializeField]
-	private GameObject Floor;
-	[SerializeField]
-	private GameObject Ceiling;
+	public GameObject Floor;
+	public GameObject Ceiling;
+
+	public PlayingField PlayingField;
+	public MinMax LevelPlayableMinMax { get => this.PlayingField.MinMax; }
+
+	private int RequiredDotCount = -1;
+	private bool GoldenDotCollected;
+
+	private Camera camera;
+	private Vector3 cameraSittingPosition;
+
+	private Animator anim;
 
 	public override void Awake() {
 		base.Awake();
-		Camera c = Camera.main;
-
-		//float size = c.orthographicSize; // TODO: Fix, don't use camera size - want to support something aside from 16:9?
-		//LevelPlayableMinMax = new MinMax(-size + 0.5f, size); // TODO: Fix, don't hardcode
-
-		Bounds box = Floor.GetComponent<BoxCollider2D>().bounds;
-		LevelPlayableMinMax = new MinMax(box.min.y, box.max.y);
+		camera = Camera.main;
+		anim = GetComponent<Animator>();
+		PlayingField = FindObjectOfType<PlayingField>();
 	}
 
 	public override void Start() {
@@ -52,10 +53,6 @@ public class LevelManager : ContextManager
 		}	
 
 		SetRemainingLives(3);
-	}
-
-	public void Update() {
-		
 	}
 
 	public override void HandleInput(InputPackage p) {
@@ -106,8 +103,56 @@ public class LevelManager : ContextManager
 		RemainingLivesChanged?.Invoke(this, RemainingLives);
 	}
 
-	public void LateUpdate() {
-		
+	public void CeilingSwitchEnd() {
+		Transform levelHolder = Ceiling.transform.parent;
+		levelHolder.rotation = Quaternion.Euler(180, 0, 0);
+		PlayingField.CalculateBoundaries();
+
+		camera.transform.position = new Vector3(0, 3, -25);
+		camera.transform.rotation = Quaternion.Euler(9,0,0);
+
+		anim.enabled = false;
+		Destroy(Floor);
+
+		foreach(Ball b in Balls) {
+			b.gameObject.SetActive(true);
+			b.SelectPlayerAndDropBall(true);
+		}
+		LeftPlayer.CeilingSwitchEnd();
+		RightPlayer.CeilingSwitchEnd();
+	}
+
+	public void AddRequiredDot() {
+		if(RequiredDotCount < 0) {
+			RequiredDotCount = 1;
+		}
+		else {
+			RequiredDotCount++;
+		}
+	}
+
+	public void DotCollected(DotType d) {
+		if(d == DotType.Required) {
+			RequiredDotCount--;
+			if(RequiredDotCount <= 0) {
+				foreach(Ball b in Balls) {
+					b.gameObject.SetActive(false);
+				}
+				if(Ceiling.activeInHierarchy) {
+					// end level
+					StartCoroutine(ExecuteDelayedAction(() => GameManager.Instance.ReloadLevel(), 1.2f));
+				}
+				else {
+					// go to ceiling
+					anim.enabled = true;
+					RightPlayer.CeilingSwitchStart();
+					LeftPlayer.CeilingSwitchStart();
+				}
+			}
+		}
+		else if(d == DotType.Golden) {
+			GoldenDotCollected = true;
+		}
 	}
 
 	public IEnumerator ExecuteDelayedAction( Action action, float delay ) {

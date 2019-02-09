@@ -112,7 +112,7 @@ public class Ball : BaseBall
 				MovementData.HandleNonPlayerCollision(dot, normal, diff, 0f, hitBetweenLastMove.centroid);
 			}
 			else {
-				MovementData.HandleNonPlayerCollision(dot, normal, extra, WaitingForHit ? 0f : 0.25f, hitBetweenLastMove.centroid);
+				MovementData.HandleNonPlayerCollision(dot, normal, extra, 0f, hitBetweenLastMove.centroid);
 			}
 
 			projectedFlight = GetFlightPath(collider, AimAssist);
@@ -355,7 +355,7 @@ public class Ball : BaseBall
 
 	public IEnumerator BigBall() {
 		GraduateBallSize(0.5f);
-		yield return new WaitForSeconds(1 * 60f);
+		yield return new WaitForSeconds(30f);
 		GraduateBallSize(0.25f);
 	}
 
@@ -371,7 +371,7 @@ public class Ball : BaseBall
 
 			float dist = (destX - transform.position.x);
 			float diff = dist * 2f * Time.deltaTime;
-			if (Mathf.Abs(dist) < 0.1f) {
+			if (Mathf.Abs(dist) < 0.25f) {
 				break;
 			}
 			else {

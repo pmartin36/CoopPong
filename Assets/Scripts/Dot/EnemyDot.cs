@@ -13,10 +13,11 @@ public class EnemyDot : Dot
 
 	public override void OnDestroyEffect(GameObject ball) {
 		// Spawn Enemy
+		base.OnDestroyEffect(ball);
 		foreach(Transform enemy in Enemies) {
 			if(enemy != this.gameObject) {
 				enemy.gameObject.SetActive(true);
-				enemy.parent = null;
+				enemy.parent = transform.parent.parent; //Floor or Ceiling
 			}
 		}
 	}

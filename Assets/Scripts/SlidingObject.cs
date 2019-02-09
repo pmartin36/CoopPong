@@ -40,7 +40,7 @@ public class SlidingObject : MonoBehaviour, IMoving {
 
 		float distFromCenter = diffFromCenter.magnitude;
 		if(Mathf.Abs(positionDirection * distFromCenter + diff) > Range.Max) {
-			diff = pushDirection * (Range.Max - distFromCenter);
+			diff = pushDirection * Mathf.Max(0, Range.Max - distFromCenter);
 		}
 
 		ObjectOnTrack.transform.localPosition += TrackDirection * diff;
