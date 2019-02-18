@@ -5,6 +5,8 @@ using UnityEngine;
 
 public class CeilingFloorToggler : EditorWindow
 {
+	private bool validLevel = true;
+
 	public bool ShowingFloor;
 	public bool disabled;
 
@@ -29,9 +31,11 @@ public class CeilingFloorToggler : EditorWindow
 		Floor = Levels?.transform.Find("Floor")?.gameObject;
 		if(Camera == null || Levels == null || Ceiling == null || Floor == null) {
 			disabled = true;
+			validLevel = false;
 			Debug.Log($"Camera: {(Camera == null?"Good":"null")}, Levels: {(Levels == null ? "Good" : "null")}, Ceiling: {(Ceiling == null ? "Good" : "null")}, Floor: {(Floor == null ? "Good" : "null")}");
 		}
 		else {
+			validLevel = true;
 			ShowingFloor = Floor.activeInHierarchy;
 		}
 	}
@@ -44,7 +48,9 @@ public class CeilingFloorToggler : EditorWindow
 		if (state == PlayModeStateChange.ExitingEditMode) {
 			// switching to play mode - saving
 			Debug.Log("switching to play mode");
-			ShowFloor();
+			if(validLevel) {
+				ShowFloor();
+			}
 			disabled = true;
 		}
 		else if(state == PlayModeStateChange.EnteredEditMode) {

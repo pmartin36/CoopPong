@@ -112,10 +112,10 @@ public abstract class BaseBall : MonoBehaviour
 	protected IEnumerator ChangeBallSize(float target, float time = 1f, YieldInstruction yield = null) {
 		float startTime = Time.time;
 		float startSize = ballRadius;
-		var wait = yield ?? new WaitForEndOfFrame();
+		var wait = yield ?? null;
 		while(Time.time - startTime < time + 0.1f) {
 			SetBallRadius(Mathf.Lerp(startSize, target, (Time.time - startTime) / time));
-			yield return wait;
+			yield return yield;
 		}
 	}
 }

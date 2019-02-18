@@ -27,12 +27,10 @@ public class DeathScreen : MonoBehaviour
 		Color end = Color.black;
 
 		float time = 0;
-		var wait = new WaitForEndOfFrame();
-
 		while(time < 1f) {
 			background.color = Color.Lerp(start, end, time);
 			time += Time.deltaTime;
-			yield return wait;
+			yield return null;
 		}
 	}
 }

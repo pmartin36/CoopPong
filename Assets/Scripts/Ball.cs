@@ -282,7 +282,7 @@ public class Ball : BaseBall
 				if (dot < 0) {
 					// Debug.Log($"Est - n: {normal}, d: {dot}, am: {actualMoveDirection} c: {ballHit.collider.gameObject.name}");
 					expectedCollisionIndices.Add(i);
-					md.HandleNonPlayerCollision(dot, normal, Vector3.zero, msIncrease, ballHit.centroid);
+					md.HandleNonPlayerCollision(dot, normal, Vector3.zero, 0f, ballHit.centroid);
 					lastCollisionIndex = i;			
 				}
 				colliderLast = ballHit.collider;
@@ -363,7 +363,6 @@ public class Ball : BaseBall
 		float time = 0;
 		float start = transform.position.x;
 		float direction = Mathf.Sign(destX - start);
-		var wait = new WaitForEndOfFrame();
 		while( true ) {		
 			if(Inactive && time > activateTime) {
 				Inactive = false;
@@ -379,7 +378,7 @@ public class Ball : BaseBall
 			}
 
 			time += Time.deltaTime;
-			yield return wait;
+			yield return null;
 		}
 
 		completeCallback?.Invoke();

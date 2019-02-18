@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class Paddle : MonoBehaviour
 {
-	public static float BaseLinePosition = 15.5f;
+	public static float BaseLinePosition = 16.5f;
 
 	private PlayerSide Side;
 	private float LinePosition;
@@ -42,12 +42,6 @@ public class Paddle : MonoBehaviour
 	public void SetColor(Color c) {
 		foreach (SpriteRenderer s in spriteRenderers) {
 			s.color = c;
-		}
-	}
-
-	public void SetPips(bool pips) {
-		foreach (SpriteRenderer s in spriteRenderers) {
-			s.flipX = pips;
 		}
 	}
 

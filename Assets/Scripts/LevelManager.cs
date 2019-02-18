@@ -2,7 +2,9 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
+[RequireComponent(typeof(LevelInputManager))]
 public class LevelManager : ContextManager
 {
 	public Player LeftPlayer;
@@ -57,11 +59,11 @@ public class LevelManager : ContextManager
 
 	public override void HandleInput(InputPackage p) {
 		if(LeftPlayer != null) {
-			LeftPlayer.HandleInput(p.LeftPlayerVertical, p.LeftPlayerLaunchBall, p.LeftPlayerFlip, p.LeftPlayerButton2);
+			LeftPlayer.HandleInput(p.LeftPlayerVertical, p.LeftPlayerStart, p.LeftPlayerBoost, p.LeftPlayerCtrl);
 		}
 
 		if(RightPlayer != null) {
-			RightPlayer.HandleInput(p.RightPlayerVertical, p.RightPlayerLaunchBall, p.RightPlayerFlip, p.RightPlayerButton2);
+			RightPlayer.HandleInput(p.RightPlayerVertical, p.RightPlayerStart, p.RightPlayerBoost, p.RightPlayerCtrl);
 		}
 	}
 

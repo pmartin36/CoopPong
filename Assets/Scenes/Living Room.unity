@@ -4118,6 +4118,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1227886840}
   - component: {fileID: 1227886839}
+  - component: {fileID: 1227886842}
   - component: {fileID: 1227886841}
   m_Layer: 0
   m_Name: LevelManager
@@ -4141,7 +4142,6 @@ MonoBehaviour:
   LeftPlayer: {fileID: 1887602410}
   RightPlayer: {fileID: 918860357}
   Balls: []
-  SpawnDataAsset: {fileID: 0}
   RemainingLives: 0
   Floor: {fileID: 1864726394}
   Ceiling: {fileID: 1554074106}
@@ -4188,6 +4188,18 @@ Animator:
   m_HasTransformHierarchy: 1
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorControllerStateOnDisable: 0
+--- !u!114 &1227886842
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1227886838}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fba834dc9bff61b4886c4671fd5f5d69, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &1228509933 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 100004, guid: 64331bf6f5f91b443ad71bfd29ea1414,
@@ -4437,12 +4449,12 @@ PrefabInstance:
     - target: {fileID: 7082404828132371959, guid: b2544b7e744a8794bbf0fc8e946b67c9,
         type: 3}
       propertyPath: m_LocalPosition.x
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7082404828132371959, guid: b2544b7e744a8794bbf0fc8e946b67c9,
         type: 3}
       propertyPath: m_LocalPosition.z
-      value: -0.5
+      value: -0.25
       objectReference: {fileID: 0}
     - target: {fileID: 3527245803154565345, guid: b2544b7e744a8794bbf0fc8e946b67c9,
         type: 3}
@@ -7872,7 +7884,7 @@ PrefabInstance:
     - target: {fileID: 7082404828132371959, guid: b2544b7e744a8794bbf0fc8e946b67c9,
         type: 3}
       propertyPath: m_LocalPosition.x
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 918860361, guid: b2544b7e744a8794bbf0fc8e946b67c9, type: 3}
       propertyPath: m_Points.m_Paths.Array.data[0].Array.size

@@ -4,6 +4,7 @@ using UnityEngine;
 
 public abstract class ContextManager : MonoBehaviour
 {
+
 	public virtual void Awake() {
 		GameManager.Instance.ContextManager = this;
 	}

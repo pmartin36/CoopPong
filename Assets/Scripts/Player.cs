@@ -60,8 +60,8 @@ public class Player : MonoBehaviour
 
 	public StatusEffect StatusEffects;
 
-	private bool pipsOut;
-	private bool buttonDown;
+	private bool boosting;
+
 	private float verticalInput;
 
 	public bool PlayerControlled;
@@ -130,7 +130,6 @@ public class Player : MonoBehaviour
 
 		transform.position = new Vector3(transform.position.x, UnityEngine.Random.Range(MovementRange.Min, MovementRange.Max));
 
-		pipsOut = true;
 		InPlay = true;
 	}
 
@@ -167,27 +166,30 @@ public class Player : MonoBehaviour
 
 	private void MoveFromInput(out bool overMaxSpeed) {
 		overMaxSpeed = false;
-		if (buttonDown) {
+		if (IsControlling) {
 			lastFrameMoveSpeed = 0;
 			lastFrameAcceleration = 0;
 		}
 		else if(forcedMovementLocation == null) {
 			float targetDelta = targetMoveSpeed; 
 			lastFrameMoveSpeed = lastFrameMoveSpeed  + (lastFrameAcceleration * Time.fixedDeltaTime);
-			if(pipsOut) {
-				if( Mathf.Abs(lastFrameMoveSpeed) > MaxMoveSpeed ) {
+			if(!boosting) {
+				bool slowingDown = Mathf.Abs(targetDelta) < Mathf.Abs(lastFrameMoveSpeed);
+				if ( Mathf.Abs(lastFrameMoveSpeed) > MaxMoveSpeed ) {
 					// we're slowing down after being in non-pips out mode
-					targetDelta = Mathf.SmoothDamp(lastFrameMoveSpeed, targetDelta, ref lastFrameAcceleration, 0.3f);
+					targetDelta = Mathf.SmoothDamp(lastFrameMoveSpeed, targetDelta, ref lastFrameAcceleration, 0.2f);
 					overMaxSpeed = true;
 				}
-				else if (Mathf.Abs(targetDelta) < Mathf.Abs(lastFrameMoveSpeed)) {
+				else if (slowingDown) {
 					targetDelta = Mathf.SmoothDamp(lastFrameMoveSpeed, targetDelta, ref lastFrameAcceleration, 0.1f);
+				}
+				else {
+					targetDelta = Mathf.SmoothDamp(lastFrameMoveSpeed, targetDelta, ref lastFrameAcceleration, 0.3f);
 				}
 			}
 			else {
-				targetDelta *= 1.8f; // non-pips out can move at 1.8x speed
-				bool slowingDown = Mathf.Abs(targetDelta) < Mathf.Abs(lastFrameMoveSpeed);
-				targetDelta = Mathf.SmoothDamp(lastFrameMoveSpeed, targetDelta, ref lastFrameAcceleration, slowingDown ? 0.3f : 0.2f);
+				targetDelta *= 1.6f; // non-pips out can move at 1.6x speed
+				targetDelta = Mathf.SmoothDamp(lastFrameMoveSpeed, targetDelta, ref lastFrameAcceleration, 0.3f);
 			}
 
 			float modifiedY = Mathf.Clamp(transform.position.y + targetDelta * Time.fixedDeltaTime, MovementRange.Min, MovementRange.Max);
@@ -196,11 +198,10 @@ public class Player : MonoBehaviour
 		}
 	}
 
-	public void HandleInput(float vertical, bool launchInput, bool button1, bool button2) {
+	public void HandleInput(float vertical, bool launchInput, bool boost, bool ctrl) {
 		verticalInput = vertical;
 		if(PlayerControlled && !disabledInputs) {
-			buttonDown = button2;
-			if (buttonDown) {
+			if (ctrl) {
 				IsControlling = true;
 				if(RemoteControlActive) {
 					Pet.SetCommand(CommandLocation.None, 0);
@@ -235,21 +236,19 @@ public class Player : MonoBehaviour
 					StartCoroutine(PushPaddle());
 				}
 
-				if (button1) {
+				if (boost) {
 					if(!LaserActive) {
-						SetPipsOut(!pipsOut);
+						boosting = true;
 					}
 					else if(CanPerformActions) {
 						Laser.TryFire();
 					}
 				}
+				else {
+					boosting = false;
+				}
 			}
 		} 
-	}
-
-	private void SetPipsOut(bool pips) {
-		pipsOut = pips;
-		paddle.SetPips(pips);
 	}
 
 	public void ResetMoveSpeed() {
@@ -275,7 +274,7 @@ public class Player : MonoBehaviour
 		paddle.capsuleCollider.enabled = false;
 
 		StartCoroutine(LastBallInteractedWith.PushBallToStart(
-			paddle.transform.position.x + (Side == PlayerSide.Left ? 1f : -1f),
+			paddle.transform.position.x + (Side == PlayerSide.Left ? 1.2f : -1.2f),
 			0.4f,
 			() => paddle.capsuleCollider.enabled = true));
 
@@ -302,11 +301,11 @@ public class Player : MonoBehaviour
 	}
 
 	public float GetRotationModifier(Vector3 point, Vector3 incoming) {
-		return (!pipsOut || LaserActive)  ? 0.1f : 2f;
+		return LaserActive  ? 0.1f : 2f;
 	}
 
 	public float GetMSDelta(Vector3 point, Vector3 incoming) {
-		return (pipsOut && !LaserActive) ? 0.1f : 0.4f;
+		return 0.4f;
 	}
 
 	public void GoToLocation(float py) {
@@ -364,7 +363,6 @@ public class Player : MonoBehaviour
 					RemoteControl.gameObject.SetActive(false);
 				}
 				Laser.gameObject.SetActive(true);
-				SetPipsOut(true);
 				break;
 			case Powerup.Remote:
 				if (LaserActive) {
@@ -458,10 +456,10 @@ public class Player : MonoBehaviour
 		float startTime = Time.time;
 		float start = transform.position.y;
 		float end = forcedMovementLocation.Value;
-		var wait = new WaitForEndOfFrame();
+
 		while(Time.time - startTime < 0.25f) {
 			transform.position = new Vector3(transform.position.x, Mathf.Lerp(start, end, (Time.time - startTime) / 0.25f));
-			yield return wait;
+			yield return null;
 		}
 		forcedMovementLocation = null;
 
@@ -475,19 +473,18 @@ public class Player : MonoBehaviour
 		float startTime = Time.time;
 		float pushedPosition = Side == PlayerSide.Right ? -1f : 1f;
 		float baseline = Paddle.BaseLinePosition * (Side == PlayerSide.Left ? -1f : 1f);
-		var wait = new WaitForEndOfFrame();
 
 		while (Time.time - startTime < 0.25f) {
 			OffsetFromLine = Mathf.Lerp(0, pushedPosition, (Time.time - startTime) / 0.25f);
 			paddle.transform.position = new Vector3(baseline + OffsetFromLine, transform.position.y, paddle.transform.position.z);
-			yield return wait;
+			yield return null;
 		}
 
 		startTime = Time.time;
 		while (Time.time - startTime < 0.35f) {
 			OffsetFromLine = Mathf.Lerp(pushedPosition, 0, (Time.time - startTime) / 0.25f);
 			paddle.transform.position = new Vector3(baseline + OffsetFromLine, transform.position.y, paddle.transform.position.z);
-			yield return wait;
+			yield return null;
 		}
 	}
 }
