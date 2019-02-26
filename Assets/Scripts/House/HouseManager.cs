@@ -16,9 +16,11 @@ public class HouseManager : ContextManager
 		base.Start();
 		if (Player1 != null) {
 			Player1.SetStyle(GameManager.Instance.Player1Style);
+			Player1.OtherPlayer = Player2;
 		}
 		if (Player2 != null) {
 			Player2.SetStyle(GameManager.Instance.Player2Style);
+			Player2.OtherPlayer = Player1;
 		}
 	}
 
@@ -28,7 +30,7 @@ public class HouseManager : ContextManager
 			Player1.HandleInput(p.LeftPlayerVertical, p.LeftPlayerHorizontal, p.LeftPlayerStart, p.LeftPlayerBoost, p.LeftPlayerCtrl);
 		}
 		if(Player2 != null) {
-			Player2.HandleInput(p.RightPlayerVertical, p.RightPlayerVertical, p.RightPlayerStart, p.RightPlayerBoost, p.RightPlayerCtrl);
+			Player2.HandleInput(p.RightPlayerVertical, p.RightPlayerHorizontal, p.RightPlayerStart, p.RightPlayerBoost, p.RightPlayerCtrl);
 		}
 	}
 

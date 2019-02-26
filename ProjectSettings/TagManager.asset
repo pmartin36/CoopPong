@@ -13,6 +13,8 @@ TagManager:
   - Dot
   - Enemy
   - Ball
+  - Door
+  - OpenDoorway
   layers:
   - Default
   - TransparentFX
@@ -26,7 +28,7 @@ TagManager:
   - Collidable
   - Target
   - Player
-  - 
+  - Pet
   - 
   - 
   - 
