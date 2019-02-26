@@ -19,14 +19,18 @@ public class HousePet : MonoBehaviour
 
 	public void AddWaypoint(bool exact, bool required) {
 		Vector3 playerAngle = -Utils.AngleToVector(Player.transform.eulerAngles.z);
-		waypoint = new Waypoint(Player.transform.position + (3 * Player.ForcePositionVector), exact, required);
+		waypoint = new Waypoint(Player.transform.position + (2 * Player.ForcePositionVector), exact, required);
 		timeSinceLastWaypoint = 0;
 	}
 
     // Update is called once per frame
     void LateUpdate()
     {
-		transform.Rotate(new Vector3(0,0,(transform.eulerAngles.z - Player.transform.eulerAngles.z) * 0.015f));
+		var angleDiff = (Player.transform.eulerAngles.z - transform.eulerAngles.z);
+		if(Mathf.Abs(angleDiff) > 180) {
+			angleDiff = angleDiff < 0 ? angleDiff + 360 : angleDiff - 360;
+		}
+		transform.Rotate(new Vector3(0, 0, angleDiff * 0.015f));
 
 		Vector3 diffToPlayer = (Vector2)transform.position - (Vector2)Player.transform.position;
 		
@@ -37,7 +41,7 @@ public class HousePet : MonoBehaviour
 		}
 		else {
 			Vector3 playerAngle = -Utils.AngleToVector(Player.transform.eulerAngles.z);
-			Vector3 targetPosition = Player.transform.position + (3 * Player.ForcePositionVector);
+			Vector3 targetPosition = Player.transform.position + (2 * Player.ForcePositionVector);
 			if(waypoint != null) {
 				targetPosition = waypoint.Position;
 			}
@@ -52,12 +56,11 @@ public class HousePet : MonoBehaviour
 			}
 
 			if (positionDiffMagnitude < amountToMove) {
-				transform.position = targetPosition;
-				waypoint = null;			
+				waypoint = null;
+				amountToMove = positionDiffMagnitude;
 			}
-			else {
-				transform.position += positionDiff.normalized * amountToMove;
-			}
+
+			transform.position += positionDiff.normalized * amountToMove;
 		}
     }
 

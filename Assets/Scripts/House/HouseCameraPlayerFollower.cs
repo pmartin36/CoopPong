@@ -6,7 +6,18 @@ public class HouseCameraPlayerFollower : MonoBehaviour
 {
 	private static Vector3 baseOffset;
 	static HouseCameraPlayerFollower() {
-		baseOffset = new Vector3(12, 0, -20);
+		baseOffset = new Vector3(-12, 0, -20);
+	}
+
+	public Vector3 Position { get => transform.position; }
+	public Quaternion Rotation { get => transform.rotation; } 
+
+	private float angleDiff {
+		get {
+			return Vector2.SignedAngle(
+					transform.position - player.transform.position,
+					-Utils.AngleToVector(player.transform.eulerAngles.z));
+		}
 	}
 
 	[SerializeField]
@@ -17,13 +28,10 @@ public class HouseCameraPlayerFollower : MonoBehaviour
     void Start()
     {
 		cam = Camera.main.GetComponent<HouseCamera>();
-        transform.position = player.transform.position + baseOffset;
 
-		var angleDiff = Vector2.SignedAngle(
-			transform.position - player.transform.position,
-			-Utils.AngleToVector(player.transform.eulerAngles.z));
-
-		transform.RotateAround(player.transform.position, Vector3.forward, angleDiff);
+		Vector3 rotated = Quaternion.Euler(0, 0, player.transform.eulerAngles.z) * baseOffset;
+		transform.position = player.transform.position + rotated;
+		transform.RotateAround(player.transform.position, Vector3.forward, this.angleDiff);
 
 		player.Follower = this;
 	}
@@ -32,12 +40,7 @@ public class HouseCameraPlayerFollower : MonoBehaviour
     void LateUpdate()
     {
 		transform.position += player.MovementDelta;
-
-		var angleDiff = Vector2.SignedAngle(
-			transform.position - player.transform.position,
-			-Utils.AngleToVector(player.transform.eulerAngles.z));
-
-		transform.RotateAround(player.transform.position, Vector3.forward, angleDiff * 0.015f);
+		transform.RotateAround(player.transform.position, Vector3.forward, this.angleDiff * 0.015f);
 
 		if(!cam.SwitchingPlayers && player.IsLeadPlayer) {
 			cam.transform.position = this.transform.position;

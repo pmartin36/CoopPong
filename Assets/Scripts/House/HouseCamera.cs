@@ -7,9 +7,9 @@ public class HouseCamera : MonoBehaviour
 {
 	private static Vector3 baseOffset;
 	private Camera camera;
-	private HousePlayer leadPlayer;
 
 	public bool SwitchingPlayers { get; set; } = false;
+	private HouseCameraPlayerFollower FollowedFollower;
 
     // Start is called before the first frame update
     void Awake()
@@ -20,51 +20,28 @@ public class HouseCamera : MonoBehaviour
     }
 
 	private void SetPlayer(object sender, EventArgs e) {
-		leadPlayer = sender as HousePlayer;
-		// transform.position = leadPlayer.transform.position + baseOffset;
+		FollowedFollower = (sender as HousePlayer).Follower;
 		StartCoroutine(MoveToLeadPlayer());
 	}
 
 	void LateUpdate()
     {
-		if(leadPlayer != null) {
-			if(!SwitchingPlayers) {
-				transform.position += leadPlayer.MovementDelta;
-			}
-
-			// var e = transform.eulerAngles;
-			// transform.RotateAround(leadPlayer.transform.position, Vector3.forward, leadPlayer.RotationDelta);
-			var angleDiff = Vector2.SignedAngle(
-				transform.position - leadPlayer.transform.position,
-				-Utils.AngleToVector(leadPlayer.transform.eulerAngles.z));
-
-			transform.RotateAround(leadPlayer.transform.position, Vector3.forward, angleDiff * 0.015f);
-		}
+		// position synced with follower
 	}
 
 	IEnumerator MoveToLeadPlayer() {
 		SwitchingPlayers = true;
-		float dist = 1;
-
-		while (dist > 0.1f) {
-			Vector3 targetOffset = Quaternion.Euler(0, 0, leadPlayer.transform.eulerAngles.z) * baseOffset;
-
-			var angleDiff = Vector2.SignedAngle(
-				transform.position - leadPlayer.transform.position,
-				-Utils.AngleToVector(leadPlayer.transform.eulerAngles.z));
-
-			// transform.LookAt(leadPlayer.transform, Vector3.forward);
-
-			Vector3 targetPosition = leadPlayer.transform.position + targetOffset;
-			Vector3 diff = (targetPosition - transform.position);
-			dist = diff.sqrMagnitude;
-
-			transform.position += diff;
-			dist -= dist;
+		float time = 0f;
+		float jTime = 2f;
+		while (time < jTime) {
+			transform.position = Vector3.Lerp(transform.position, FollowedFollower.Position, time / jTime);
+			transform.rotation = Quaternion.Lerp(transform.rotation, FollowedFollower.Rotation, time / jTime);
+			time += Time.deltaTime;
 			yield return null;
 		}
 
-		transform.position = leadPlayer.transform.position + baseOffset;
+		transform.position = FollowedFollower.Position;
+		transform.rotation = FollowedFollower.Rotation;
 		SwitchingPlayers = false;
 	}
 }
